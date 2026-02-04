@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Movie Recommendation System</title>
+</head>
+<style>
+    body {
+        background-image: url("https://miro.medium.com/max/1132/1*8y9sCjaxFmAzEiVEzw3YoQ.jpeg");
+        background-color: rgba(255, 255, 255, 0.8);
+        width: 100%;
+        height: 100%;
+        background-blend-mode: lighten;
+    }
+
+    
+
+    .header {
+        /*height: 100vh;*/
+        display: flex;
+        justify-content: center;
+        padding-top: 100px;
+        font-family: sans-serif;
+        padding: 5px;
+  text-align: center;
+  color: black;
+  font-size: 30px;
+    }
+
+    
+</style>
+
+<body>
+    <div class="header">
+        <h1>Movie Recommendation System</h1>
+      </div>
+      
+      <main id="main">
+
+        <table style="margin-left:200px">
+            <tr style="padding:10px">
+                <td style="margin-right:200px">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="section-title">
+                            <h2>Matrix Factorization</h2>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="section-title">
+                            <h2>KNN</h2>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr style="padding:10px">
+                <td>
+                    <table style="margin-right:200px">
+                        <tr style="padding:10px">
+                            <td >
+                                {% for x in matrix_data %}
+                                <tr>
+                                    <td style="padding:10px"><img src="{{ x }}" class="img-fluid" alt="" style="height:500px;width:350px;" width = "200" height = "300"></td>
+                                </tr>
+                                {% endfor %}
+                            </td>
+                        </tr>
+
+                    </table>
+                </td>
+                <td>
+                    <table>
+                        <tr style="padding:10px">
+                            <td style="margin-right:200px">
+                                {% for x in knn_data %}
+                                <tr>
+                                    <td style="padding:10px"><img src="{{ x }}" class="img-fluid" alt="" style="height:500px;width:350px;"  width = "200" height = "300"></td>
+                                </tr>
+                                {% endfor %}
+                            </td>
+                        </tr>
+
+                    </table>
+                </td>
+            </tr>
+
+        </table>
+
+
+
+    </main>
+</body>
+
+</html>

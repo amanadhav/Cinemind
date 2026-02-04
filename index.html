@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Movie Recommendation System</title>
+</head>
+<style>
+    body {
+        background-image: url("https://miro.medium.com/max/1132/1*8y9sCjaxFmAzEiVEzw3YoQ.jpeg");
+        background-color: rgba(255, 255, 255, 0.8);
+        width: 100%;
+        height: 100%;
+        background-blend-mode: lighten;
+    }
+
+    .search-btn {
+        height: 50px;
+        width: 150px;
+        background: yellowgreen;
+        border-radius: 25px;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        color: black;
+
+    }
+
+    input {
+        border-top-style: groove;
+        border-right-style: groove;
+        border-left-style: groove;
+        border-bottom-style: groove;
+        background-color: #eee;
+    }
+
+    .search {
+        height: 50px;
+        padding: 10px;
+        border-radius: 25px;
+        outline: none;
+        width: 400px;
+    }
+
+    .search-btn:hover {
+        opacity: 0.8;
+    }
+
+    .header {
+        /*height: 100vh;*/
+        display: flex;
+        justify-content: center;
+        padding-top: 100px;
+        font-family: sans-serif;
+        padding: 5px;
+  text-align: center;
+  color: black;
+  font-size: 30px;
+    }
+
+    h2 {
+        color: black;
+        margin-bottom: 40px;
+        font-size: 30px;
+        letter-spacing: 2px;
+        text-align: center;
+    }
+</style>
+
+<body>
+    <div class="header">
+        <h1>Movie Recommendation System</h1>
+      </div>
+      
+    <main id="main">
+        <section id="contact" class="contact">
+            <div class="container">
+                <h2>Insert User ID from 1 to 610 to get movie recommendations</h2>
+
+                <form action="/show_recommendation" method="post" role="form" class="header">
+                    <div class="form-group">
+                        <input type="text" class="search" name="user_id" id="user_id" placeholder="Enter User ID">
+                        <button class="search-btn" type="submit">Get Recommendations</button>
+                    </div>
+                </form>
+
+                <h2>Content Based: Enter a movie name to get movie recommendations</h2>
+
+                <form action="/content_based" method="post" role="form" class="header">
+                    <div class="form-group">
+                        <input type="text" class="search" name="movie_name" id="movie_name" placeholder="Enter Movie name">
+                        <button class="search-btn" type="submit">Get Recommendations</button>
+                    </div>
+                </form>
+
+            </div>
+        </section>
+
+    </main>
+</body>
+
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Movie Recommendation System</title>
+</head>
+<style>
+    body {
+        background-image: url("https://miro.medium.com/max/1132/1*8y9sCjaxFmAzEiVEzw3YoQ.jpeg");
+        background-color: rgba(255, 255, 255, 0.8);
+        width: 100%;
+        height: 100%;
+        background-blend-mode: lighten;
+    }
+
+    
+
+    .header {
+        /*height: 100vh;*/
+        display: flex;
+        justify-content: center;
+        padding-top: 100px;
+        font-family: sans-serif;
+        padding: 5px;
+        text-align: center;
+        color: black;
+        font-size: 30px;
+    }
+
+    
+</style>
+
+<body>
+    <div class="header">
+        <h1>Movie Recommendation System: Content-based Recommendation</h1>
+    </div>
+      
+    <main id="main">
+        <label>Recommendations based on the movie {{ movie_name }}</label>
+        <ul>
+            {% for movie in movie_list %}
+            <li>
+                <table>
+                    <tr>
+                        <td style="padding:10px"><img src="{{ movie.img_url }}" class="img-fluid" alt="" style="height:74px;width:50px;" width = "200" height = "300"></td>
+                        <td>{{ movie.movie_name }}</td>
+                    </tr>
+                </table>
+            </li>
+            {% endfor %}
+        </ul>
+    </main>
+    
+</body>
+
+</html>
