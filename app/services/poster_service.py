@@ -1,10 +1,12 @@
-# Get Movie Poster from IMDB from the Movie Title
+"""Poster image fetching service.
+
+Phase 1: faithful port of the BeautifulSoup IMDb scraper from
+imagescraper.py. Replaced with TMDB API calls in Phase 3.
+"""
 import json
-from bs4 import BeautifulSoup
+
 import requests
-import os
-from PIL import Image
-from io import BytesIO
+from bs4 import BeautifulSoup
 
 
 class ImageScraper:
@@ -33,14 +35,3 @@ class ImageScraper:
         if movie_info := self.get_movie_info_IMDb(title):
             return movie_info["image"]
         return None
-
-    def download_poster(self, title, dir_name):
-        if src := self.get_poster_url(title):
-            if not os.path.isdir(dir_name):
-                os.mkdir(dir_name)
-            response = requests.get(src)
-            ext = src.split(".")[-1]
-            img = Image.open(BytesIO(response.content))
-            img.save(f"{dir_name}/{title}.{ext}")
-        else:
-            print(f"No poster found for {title}")
