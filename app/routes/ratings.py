@@ -1,8 +1,13 @@
 """Cold-start rating flow: rate a few movies, get personalized picks."""
+import logging
+
 from flask import Blueprint, jsonify, request
 
+from app.schemas import RateRequest, validate
 from app.services import collab_recommender as collab
 from app.services.poster_service import get_poster_url
+
+logger = logging.getLogger(__name__)
 
 ratings_bp = Blueprint("ratings", __name__)
 
@@ -34,31 +39,11 @@ def api_rate():
     Response: ``{"recommendations": [{"movie_id", "title", "poster_url",
     "genres", "score"}, ...]}``
     """
-    payload = request.get_json(silent=True) or {}
-    ratings = payload.get("ratings")
-
-    if not isinstance(ratings, list) or not ratings:
-        return jsonify({"error": "'ratings' must be a non-empty list"}), 400
-
-    # Validate each entry has a usable movie_id and numeric rating.
-    cleaned = []
-    for entry in ratings:
-        if not isinstance(entry, dict):
-            continue
-        mid = entry.get("movie_id")
-        score = entry.get("rating")
-        try:
-            cleaned.append({"movie_id": int(mid), "rating": float(score)})
-        except (TypeError, ValueError):
-            continue
-
-    if not cleaned:
-        return (
-            jsonify({"error": "No valid {movie_id, rating} pairs provided"}),
-            400,
-        )
+    req = validate(RateRequest, request.get_json(silent=True) or {})
+    cleaned = [item.model_dump() for item in req.ratings]
 
     recs = collab.recommend_for_new_user(cleaned, n=10)
+    logger.info("Cold-start fold-in: %d ratings -> %d recs", len(cleaned), len(recs))
     for item in recs:
         item["poster_url"] = get_poster_url(item["title"])
     return jsonify({"recommendations": recs}), 200

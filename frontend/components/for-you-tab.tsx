@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Sparkles, RotateCcw } from "lucide-react";
 
-import { api, PopularMovie, Recommendation, UserRating } from "@/lib/api";
+import { api, ApiError, PopularMovie, Recommendation, UserRating } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MoviePoster } from "@/components/movie-poster";
 import { StarRating } from "@/components/star-rating";
 import { MovieDetailDialog } from "@/components/movie-detail-dialog";
+import { ErrorState } from "@/components/error-state";
 
 const MIN_RATINGS = 5;
 
@@ -23,15 +24,31 @@ export function ForYouTab() {
   const [loadingSeed, setLoadingSeed] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorTimeout, setErrorTimeout] = useState(false);
+  const [seedError, setSeedError] = useState<{ message: string; isTimeout: boolean } | null>(
+    null
+  );
   const [detailId, setDetailId] = useState<number | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  useEffect(() => {
+  function loadSeed() {
+    setLoadingSeed(true);
+    setSeedError(null);
     api
       .popularMovies(20)
       .then(setPopular)
-      .catch(() => setError("Couldn't load movies to rate."))
+      .catch((e) =>
+        setSeedError({
+          message:
+            e instanceof Error ? e.message : "Couldn't load movies to rate.",
+          isTimeout: e instanceof ApiError && e.isTimeout,
+        })
+      )
       .finally(() => setLoadingSeed(false));
+  }
+
+  useEffect(() => {
+    loadSeed();
   }, []);
 
   const ratedCount = Object.values(ratings).filter((r) => r > 0).length;
@@ -47,11 +64,13 @@ export function ForYouTab() {
       .map(([id, r]) => ({ movie_id: Number(id), rating: r }));
     setSubmitting(true);
     setError(null);
+    setErrorTimeout(false);
     try {
       const { recommendations } = await api.rate(payload);
       setRecommendations(recommendations);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
+      setErrorTimeout(e instanceof ApiError && e.isTimeout);
     } finally {
       setSubmitting(false);
     }
@@ -61,6 +80,7 @@ export function ForYouTab() {
     setRatings({});
     setRecommendations(null);
     setError(null);
+    setErrorTimeout(false);
   }
 
   // ---- Results screen ----
@@ -134,9 +154,21 @@ export function ForYouTab() {
         </Button>
       </div>
 
-      {error && <p className="text-center text-sm text-destructive">{error}</p>}
+      {error && (
+        <ErrorState
+          message={error}
+          isTimeout={errorTimeout}
+          onRetry={canSubmit ? submit : undefined}
+        />
+      )}
 
-      {loadingSeed ? (
+      {seedError ? (
+        <ErrorState
+          message={seedError.message}
+          isTimeout={seedError.isTimeout}
+          onRetry={loadSeed}
+        />
+      ) : loadingSeed ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {Array.from({ length: 20 }).map((_, i) => (
             <Skeleton key={i} className="aspect-[2/3] w-full rounded-xl" />

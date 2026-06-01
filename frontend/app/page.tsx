@@ -5,6 +5,7 @@ import { DiscoverTab } from "@/components/discover-tab";
 import { ForYouTab } from "@/components/for-you-tab";
 import { HybridTab } from "@/components/hybrid-tab";
 import { HowItWorks } from "@/components/how-it-works";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 export default function Home() {
   return (
@@ -30,13 +31,19 @@ export default function Home() {
         </div>
 
         <TabsContent value="for-you">
-          <ForYouTab />
+          <ErrorBoundary label="For You">
+            <ForYouTab />
+          </ErrorBoundary>
         </TabsContent>
         <TabsContent value="discover">
-          <DiscoverTab />
+          <ErrorBoundary label="Discover by Movie">
+            <DiscoverTab />
+          </ErrorBoundary>
         </TabsContent>
         <TabsContent value="mix-it">
-          <HybridTab />
+          <ErrorBoundary label="Mix It">
+            <HybridTab />
+          </ErrorBoundary>
         </TabsContent>
       </Tabs>
 

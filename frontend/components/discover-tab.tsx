@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
 
-import { api, MovieCard } from "@/lib/api";
+import { api, ApiError, MovieCard } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoviePoster } from "@/components/movie-poster";
 import { MovieDetailDialog } from "@/components/movie-detail-dialog";
+import { ErrorState } from "@/components/error-state";
 
 export function DiscoverTab() {
   const [query, setQuery] = useState("");
@@ -18,6 +19,8 @@ export function DiscoverTab() {
   const [results, setResults] = useState<MovieCard[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorTimeout, setErrorTimeout] = useState(false);
+  const [lastQuery, setLastQuery] = useState("");
   const [detailTitle, setDetailTitle] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -56,12 +59,15 @@ export function DiscoverTab() {
     setShowSuggestions(false);
     setLoading(true);
     setError(null);
+    setErrorTimeout(false);
+    setLastQuery(movie.trim());
     setResults([]);
     try {
       const recs = await api.recommendByMovie(movie.trim());
       setResults(recs);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
+      setErrorTimeout(e instanceof ApiError && e.isTimeout);
     } finally {
       setLoading(false);
     }
@@ -113,7 +119,11 @@ export function DiscoverTab() {
       </div>
 
       {error && (
-        <p className="text-center text-sm text-destructive">{error}</p>
+        <ErrorState
+          message={error}
+          isTimeout={errorTimeout}
+          onRetry={lastQuery ? () => runSearch(lastQuery) : undefined}
+        />
       )}
 
       {loading && <PosterGridSkeleton />}

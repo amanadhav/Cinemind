@@ -1,11 +1,20 @@
 """Recommendation endpoints: content-based, collaborative (SVD), and hybrid."""
+import logging
 import re
 
 from flask import Blueprint, jsonify, request
 
+from app.schemas import (
+    CollaborativeRequest,
+    ContentRequest,
+    HybridRequest,
+    validate,
+)
 from app.services import collab_recommender as collab
 from app.services.content_recommender import recommend
 from app.services.poster_service import get_poster_url
+
+logger = logging.getLogger(__name__)
 
 recommend_bp = Blueprint("recommend", __name__)
 
@@ -23,13 +32,11 @@ def api_recommend_content():
     Request body: ``{"movie": "Inception"}``
     Response: ``[{"title": ..., "poster_url": ...}, ...]``
     """
-    payload = request.get_json(silent=True) or {}
-    movie = payload.get("movie")
-    if not movie:
-        return jsonify({"error": "Missing 'movie' in request body"}), 400
+    req = validate(ContentRequest, request.get_json(silent=True) or {})
 
-    movie_list = recommend(movie)
+    movie_list = recommend(req.movie)
     if not isinstance(movie_list, list):
+        logger.info("Content lookup miss for query=%r", req.movie)
         return jsonify({"error": "Movie not found in our database"}), 404
 
     results = [
@@ -46,28 +53,9 @@ def api_recommend_collaborative():
     Response: ``{"recommendations": [{"movie_id", "title", "poster_url",
     "genres", "score"}, ...]}``
     """
-    payload = request.get_json(silent=True) or {}
-    user_id = payload.get("user_id")
+    req = validate(CollaborativeRequest, request.get_json(silent=True) or {})
 
-    try:
-        user_id = int(user_id)
-    except (TypeError, ValueError):
-        return jsonify({"error": "'user_id' must be an integer"}), 400
-
-    if not collab.is_valid_user_id(user_id):
-        return (
-            jsonify(
-                {
-                    "error": (
-                        f"'user_id' must be between {collab.MIN_USER_ID} and "
-                        f"{collab.MAX_USER_ID}"
-                    )
-                }
-            ),
-            400,
-        )
-
-    recs = collab.recommend_for_user(user_id, n=10)
+    recs = collab.recommend_for_user(req.user_id, n=10)
     for item in recs:
         item["poster_url"] = get_poster_url(item["title"])
     return jsonify({"recommendations": recs}), 200
@@ -84,49 +72,20 @@ def api_recommend_hybrid():
     Response: top 10 ``{"title", "poster_url", "source"}`` items where
     ``source`` is ``"content"``, ``"collaborative"``, or ``"both"``.
     """
-    payload = request.get_json(silent=True) or {}
-    movie = payload.get("movie")
-    user_id = payload.get("user_id")
-    ratings = payload.get("ratings")
-
-    if not movie:
-        return jsonify({"error": "Missing 'movie' in request body"}), 400
+    req = validate(HybridRequest, request.get_json(silent=True) or {})
+    signal, value = req.collaborative_signal()
 
     # Resolve the collaborative side from whichever signal was provided.
-    if ratings is not None:
-        cleaned = []
-        for entry in ratings if isinstance(ratings, list) else []:
-            if not isinstance(entry, dict):
-                continue
-            try:
-                cleaned.append(
-                    {
-                        "movie_id": int(entry.get("movie_id")),
-                        "rating": float(entry.get("rating")),
-                    }
-                )
-            except (TypeError, ValueError):
-                continue
-        if not cleaned:
-            return (
-                jsonify({"error": "'ratings' must contain valid {movie_id, rating}"}),
-                400,
-            )
+    if signal == "ratings":
         collab_list = [
-            item["title"] for item in collab.recommend_for_new_user(cleaned, n=10)
+            item["title"] for item in collab.recommend_for_new_user(value, n=10)
         ]
     else:
-        try:
-            user_id = int(user_id)
-        except (TypeError, ValueError):
-            return jsonify({"error": "'user_id' must be an integer"}), 400
-        if not collab.is_valid_user_id(user_id):
-            return jsonify({"error": "'user_id' must be between 1 and 610"}), 400
         collab_list = [
-            item["title"] for item in collab.recommend_for_user(user_id, n=10)
+            item["title"] for item in collab.recommend_for_user(value, n=10)
         ]
 
-    content_list = recommend(movie)
+    content_list = recommend(req.movie)
     if not isinstance(content_list, list):
         content_list = []
 

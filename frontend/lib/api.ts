@@ -2,6 +2,43 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
+// Requests that take longer than this are aborted so the UI can show a
+// "taking longer than expected" message instead of hanging forever. The
+// Railway free tier can take ~10s to wake from sleep, so the window is roomy.
+const REQUEST_TIMEOUT_MS = 15000;
+
+// Error subclass so the UI can distinguish a timeout from a normal failure.
+export class ApiError extends Error {
+  constructor(message: string, readonly isTimeout = false) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+// fetch wrapper that enforces a timeout via AbortController.
+async function fetchWithTimeout(
+  input: string,
+  init: RequestInit = {}
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "AbortError") {
+      throw new ApiError(
+        "The server is taking longer than expected. It may be waking up — please try again.",
+        true
+      );
+    }
+    throw new ApiError(
+      "Couldn't reach the server. Check your connection and try again."
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export interface MovieCard {
   title: string;
   poster_url: string;
@@ -46,21 +83,24 @@ export interface HybridResult {
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetchWithTimeout(`${API_URL}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Request failed (${res.status})`);
+    throw new ApiError(err.error || `Request failed (${res.status})`);
   }
   return res.json();
 }
 
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`);
-  if (!res.ok) throw new Error(`Request failed (${res.status})`);
+  const res = await fetchWithTimeout(`${API_URL}${path}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new ApiError(err.error || `Request failed (${res.status})`);
+  }
   return res.json();
 }
 

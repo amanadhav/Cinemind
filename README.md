@@ -49,8 +49,9 @@ Both ML models are loaded once into module-level singletons at startup
 | Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS, shadcn/ui, Radix UI |
 | Backend | Python, Flask, flask-cors, Gunicorn |
 | ML / data | scikit-learn (TF-IDF + KNN), SciPy (`svds`), pandas, NumPy |
+| Validation | Pydantic v2 (typed request schemas, bounds checking) |
 | External | TMDB API (posters, overviews, backdrops) |
-| Testing | pytest (51 tests) |
+| Testing | pytest (71 tests) |
 | Deploy | Railway (API) + Vercel (frontend) |
 
 ---
@@ -78,6 +79,30 @@ At startup the service builds a 610 × 9,724 user-item matrix from
 Content and collaborative candidate lists are interleaved, de-duplicated by a
 normalized title key, and each result is tagged `content`, `collaborative`, or
 `both` (titles found by both sources are promoted to the top).
+
+---
+
+## Production hardening
+
+The API is built for observability and robustness, not just the happy path:
+
+- **Request validation** — every endpoint validates its body/query against a
+  Pydantic v2 schema (`app/schemas.py`). User ids are bounded to 1–610, ratings
+  to the MovieLens 0.5–5.0 half-star scale, query/title lengths are capped, and
+  the cold-start payload is size-limited. Invalid input never reaches the model.
+- **Consistent error envelope** — a single set of handlers (`app/errors.py`)
+  turns validation failures, HTTP errors, and uncaught exceptions into a uniform
+  `{"error", "type"}` JSON response. Internal exceptions are logged with a full
+  traceback but return a generic message, so stack traces never leak to clients.
+- **Structured logging + request tracing** — each request gets an 8-char
+  correlation id (`app/logging_config.py`) that is attached to every log line
+  and returned in an `X-Request-ID` response header, so a single API call can be
+  traced end-to-end. Request method, path, status, and latency are logged on
+  completion.
+- **Resilient frontend** — each tab is wrapped in a React error boundary so one
+  failing section can't blank the app, the fetch client enforces a 15s timeout
+  (with a distinct "server is waking up" message for the free-tier cold start),
+  and failed data loads show an inline retry instead of a dead end.
 
 ---
 
@@ -154,6 +179,9 @@ pytest
 | GET | `/api/search` | `?q=inc` | Autocomplete over movie titles |
 | GET | `/health` | – | Health check + model-loaded status |
 
+All responses include an `X-Request-ID` header for tracing. Errors use a
+consistent envelope: `{"error": "<message>", "type": "validation_error" | "http_error" | "internal_error"}`.
+
 ### Example responses
 
 `POST /api/rate`
@@ -191,7 +219,10 @@ Vercel (frontend) instructions.
 ```
 Cinemind/
 ├── app/
-│   ├── __init__.py              # Flask app factory + CORS
+│   ├── __init__.py              # Flask app factory + CORS + request tracing
+│   ├── logging_config.py        # correlation-id-aware structured logging
+│   ├── schemas.py               # Pydantic request schemas (validation)
+│   ├── errors.py                # app-wide JSON error handlers
 │   ├── routes/
 │   │   ├── recommend.py         # content / collaborative / hybrid
 │   │   ├── ratings.py           # /api/rate, /api/movies/popular
@@ -203,11 +234,11 @@ Cinemind/
 │       └── poster_service.py        # TMDB posters + metadata + cache
 ├── frontend/                    # Next.js 14 + shadcn/ui
 │   ├── app/                     # layout, home page, globals.css
-│   ├── components/              # tabs, dialog, cards, ui/ primitives
-│   └── lib/                     # typed API client + utils
+│   ├── components/              # tabs, dialog, cards, error-boundary, ui/
+│   └── lib/                     # typed API client (timeouts) + utils
 ├── data/                        # MovieLens raw + processed CSVs
 ├── notebooks/                   # content, KNN, matrix-factorization notebooks
-├── tests/                       # pytest suite (51 tests)
+├── tests/                       # pytest suite (71 tests)
 ├── config.py · run.py · Procfile · requirements.txt · DEPLOYMENT.md
 ```
 

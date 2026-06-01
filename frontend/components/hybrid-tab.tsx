@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Search, Blend } from "lucide-react";
 
-import { api, HybridResult, PopularMovie, UserRating } from "@/lib/api";
+import { api, ApiError, HybridResult, PopularMovie, UserRating } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MoviePoster } from "@/components/movie-poster";
 import { StarRating } from "@/components/star-rating";
 import { MovieDetailDialog } from "@/components/movie-detail-dialog";
+import { ErrorState } from "@/components/error-state";
 
 const MIN_RATINGS = 3;
 
@@ -43,6 +44,7 @@ export function HybridTab() {
   const [results, setResults] = useState<HybridResult[] | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorTimeout, setErrorTimeout] = useState(false);
   const [detailTitle, setDetailTitle] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
@@ -91,10 +93,12 @@ export function HybridTab() {
       .map(([id, r]) => ({ movie_id: Number(id), rating: r }));
     setSubmitting(true);
     setError(null);
+    setErrorTimeout(false);
     try {
       setResults(await api.recommendHybrid(selectedMovie, payload));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
+      setErrorTimeout(e instanceof ApiError && e.isTimeout);
     } finally {
       setSubmitting(false);
     }
@@ -189,7 +193,13 @@ export function HybridTab() {
         </Button>
       </div>
 
-      {error && <p className="text-center text-sm text-destructive">{error}</p>}
+      {error && (
+        <ErrorState
+          message={error}
+          isTimeout={errorTimeout}
+          onRetry={canSubmit ? submit : undefined}
+        />
+      )}
 
       {results && results.length > 0 && (
         <div className="space-y-3">
