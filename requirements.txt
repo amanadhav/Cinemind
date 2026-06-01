@@ -1,0 +1,22 @@
+# CineMind runtime and test dependencies.
+# Versions are pinned to releases compatible with Python 3.9+ (per project
+# constraint). Local verification was run on newer releases under Python 3.14;
+# the code uses only stable APIs common to both.
+
+# Web framework
+Flask==3.0.3
+
+# Data / ML
+pandas==2.2.3
+scikit-learn==1.5.2
+
+# HTTP + (legacy) scraping deps
+requests==2.32.3
+beautifulsoup4==4.12.3
+Pillow==10.4.0
+
+# Configuration
+python-dotenv==1.0.1
+
+# Testing
+pytest==8.3.3
