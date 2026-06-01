@@ -87,3 +87,28 @@ def recommend(choice, n_results=10):
         for i in indices.flatten()
     ]
     return movie_list[:n_results]
+
+
+def search_titles(query, limit=10):
+    """Return up to ``limit`` movie titles matching ``query`` (substring).
+
+    Matches case-insensitively against the human-readable ``original_title``
+    column and returns title-cased, de-duplicated names sorted
+    alphabetically. Used by the search/autocomplete endpoint.
+    """
+    query = str(query).strip().lower()
+    if not query:
+        return []
+
+    data, _model, _tfidf_matrix = get_model()
+    matches = []
+    seen = set()
+    for original_title in data["original_title"]:
+        name = str(original_title)
+        if query in name.lower():
+            display = name.title()
+            if display not in seen:
+                seen.add(display)
+                matches.append(display)
+    matches.sort()
+    return matches[:limit]

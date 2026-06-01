@@ -18,8 +18,10 @@ def create_app(config_name=None):
     # Register blueprints.
     from app.routes.content_based import content_bp
     from app.routes.collaborative import collaborative_bp
+    from app.routes.api import api_bp
 
     app.register_blueprint(content_bp)
     app.register_blueprint(collaborative_bp)
+    app.register_blueprint(api_bp)
 
     return app
