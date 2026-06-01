@@ -1,7 +1,13 @@
 """Flask application factory for CineMind."""
+import logging
+
 from flask import Flask
+from flask_cors import CORS
 
 from config import get_config
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def create_app(config_name=None):
@@ -15,13 +21,18 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(get_config(config_name))
 
-    # Register blueprints.
-    from app.routes.content_based import content_bp
-    from app.routes.collaborative import collaborative_bp
-    from app.routes.api import api_bp
+    # Allow the Next.js dev frontend (and configured origins) to call the API.
+    CORS(app, origins=app.config.get("CORS_ORIGINS", ["http://localhost:3000"]))
 
-    app.register_blueprint(content_bp)
-    app.register_blueprint(collaborative_bp)
-    app.register_blueprint(api_bp)
+    # Register blueprints (JSON API only; the UI is the Next.js frontend).
+    from app.routes.recommend import recommend_bp
+    from app.routes.ratings import ratings_bp
+    from app.routes.search import search_bp
+    from app.routes.movies import movies_bp
+
+    app.register_blueprint(recommend_bp)
+    app.register_blueprint(ratings_bp)
+    app.register_blueprint(search_bp)
+    app.register_blueprint(movies_bp)
 
     return app
