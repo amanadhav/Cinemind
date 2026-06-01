@@ -1,9 +1,8 @@
 """Content-based recommendation routes.
 
-Phase 1: faithful port of the original routes. REST/JSON endpoints added
-in Phase 4.
+REST/JSON endpoints are added in Phase 4. This module currently serves the
+home page and the server-rendered content-based recommendation page.
 """
-import pandas as pd
 from flask import Blueprint, render_template, request
 
 from app.services.content_recommender import recommend
@@ -20,20 +19,21 @@ def homepage():
 
 @content_bp.route("/content_based", methods=["POST"])
 def show_content_based_recommendation():
-    try:
-        movie_name = request.form["movie_name"]
-        recommend(movie_name)
-        content_based_rec = pd.read_csv("file3.csv")
-        movie_list = content_based_rec.columns.tolist()
-        movie_inputs = []
-        for movie in movie_list:
-            img_url = imgscrape.get_poster_url(movie)
-            movie_inputs.append({"movie_name": movie, "img_url": img_url})
+    movie_name = request.form["movie_name"]
 
-        return render_template(
-            "content_based_recommendation.html",
-            movie_name=movie_name,
-            movie_list=movie_inputs,
-        )
-    except Exception:
+    # recommend() returns a list of titles directly, or an error string when
+    # the movie cannot be matched (no intermediate file3.csv).
+    movie_list = recommend(movie_name)
+    if not isinstance(movie_list, list):
         return "Couldn't find that! Please try again."
+
+    movie_inputs = []
+    for movie in movie_list:
+        img_url = imgscrape.get_poster_url(movie)
+        movie_inputs.append({"movie_name": movie, "img_url": img_url})
+
+    return render_template(
+        "content_based_recommendation.html",
+        movie_name=movie_name,
+        movie_list=movie_inputs,
+    )
