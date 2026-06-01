@@ -1,8 +1,11 @@
 """Content-based recommendation logic (TF-IDF + KNN cosine similarity).
 
-NOTE: This is a faithful port of the original content_based_app.py from
-Phase 1. The model-caching, file3.csv, and try/except bugs are fixed in
-Phase 2.
+The ML artifacts (training data, fitted KNN model, and TF-IDF matrix) are
+cached in module-level singletons via ``get_model()`` so the model is built
+once on first use rather than rebuilt on every request.
+
+``recommend()`` returns a Python list of titles directly; there is no
+intermediate CSV file (the old file3.csv race condition is gone).
 """
 import re
 
@@ -12,57 +15,75 @@ from sklearn.neighbors import NearestNeighbors
 
 from config import CONTENT_TRAIN_CSV
 
-
-def create_model():
-    """Import the dataset, build the TF-IDF matrix and fit a KNN model."""
-    data = pd.read_csv(CONTENT_TRAIN_CSV)
-    tf = TfidfVectorizer()
-    tfidf_matrix = tf.fit_transform(data["combined_features"])
-    model = NearestNeighbors(metric="cosine", algorithm="brute")
-    model.fit(tfidf_matrix)
-    return data, model, tfidf_matrix
+# Module-level singletons. Populated on the first call to get_model().
+_model = None
+_data = None
+_tfidf_matrix = None
 
 
-def recommend(choice):
-    """Find movies related to ``choice`` and return a list of titles."""
-    try:
-        model.get_params()
-    except Exception:
-        data, model, count_matrix = create_model()
+def is_model_loaded():
+    """Return True if the model singleton has been initialized."""
+    return _model is not None
 
+
+def get_model():
+    """Load and cache the dataset, TF-IDF matrix, and fitted KNN model.
+
+    On the first call this reads the processed training data, fits a
+    ``TfidfVectorizer`` over the ``combined_features`` column, and fits a
+    cosine-distance ``NearestNeighbors`` model. Subsequent calls return the
+    cached artifacts.
+
+    Returns:
+        Tuple of (data DataFrame, fitted NearestNeighbors model, tfidf matrix).
+    """
+    global _model, _data, _tfidf_matrix
+    if _model is None:
+        data = pd.read_csv(CONTENT_TRAIN_CSV)
+        tf = TfidfVectorizer()
+        tfidf_matrix = tf.fit_transform(data["combined_features"])
+        model = NearestNeighbors(metric="cosine", algorithm="brute")
+        model.fit(tfidf_matrix)
+        _data, _model, _tfidf_matrix = data, model, tfidf_matrix
+    return _data, _model, _tfidf_matrix
+
+
+def recommend(choice, n_results=10):
+    """Recommend movies similar to ``choice``.
+
+    Performs an exact title match first, then falls back to a fuzzy
+    (substring) match. The matched movie itself is included as the first
+    item, consistent with the original behaviour.
+
+    Args:
+        choice: The movie title entered by the user.
+        n_results: Number of recommendations to return (default 10).
+
+    Returns:
+        A list of recommended movie titles, or the string
+        ``"opps! movie not found in our database"`` when no match is found.
+    """
+    data, model, tfidf_matrix = get_model()
+
+    # Normalize the query the same way the stored titles were normalized.
     choice = re.sub("[^a-zA-Z1-9]", "", choice).lower()
+
     if choice in data["title"].values:
-        choice_index = data[data["title"] == choice].index.values[0]
-        distances, indices = model.kneighbors(
-            count_matrix[choice_index], n_neighbors=16
-        )
-        movie_list = [
-            data[data.index == i]["original_title"].values[0].title()
-            for i in indices.flatten()
-        ]
-        generate_csv(movie_list[:10])
-
-    elif data["title"].str.contains(choice).any():
-        similar_names = [str(s) for s in data["title"] if choice in str(s)]
-        similar_names.sort()
-        new_choice = similar_names[0]
-        choice_index = data[data["title"] == new_choice].index.values[0]
-        distances, indices = model.kneighbors(
-            count_matrix[choice_index], n_neighbors=16
-        )
-        movie_list = [
-            data[data.index == i]["original_title"].values[0].title()
-            for i in indices.flatten()
-        ]
-        generate_csv(movie_list[:10])
-        return movie_list[:10]
-
+        match_title = choice
+    elif data["title"].str.contains(choice, regex=False).any():
+        # Fuzzy match: pick the first alphabetically-sorted substring match.
+        similar_names = sorted(str(s) for s in data["title"] if choice in str(s))
+        match_title = similar_names[0]
     else:
         return "opps! movie not found in our database"
 
-
-def generate_csv(recommend_list):
-    """Write recommendations to file3.csv (removed in Phase 2)."""
-    recommend_list = pd.DataFrame(recommend_list)
-    recommend_list_transpose = recommend_list.transpose()
-    recommend_list_transpose.to_csv("file3.csv", index=False, header=False)
+    choice_index = data[data["title"] == match_title].index.values[0]
+    # Request one extra neighbour so we can still return n_results.
+    distances, indices = model.kneighbors(
+        tfidf_matrix[choice_index], n_neighbors=n_results + 6
+    )
+    movie_list = [
+        data[data.index == i]["original_title"].values[0].title()
+        for i in indices.flatten()
+    ]
+    return movie_list[:n_results]
