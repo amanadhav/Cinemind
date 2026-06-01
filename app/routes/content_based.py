@@ -6,10 +6,9 @@ home page and the server-rendered content-based recommendation page.
 from flask import Blueprint, render_template, request
 
 from app.services.content_recommender import recommend
-from app.services.poster_service import ImageScraper
+from app.services.poster_service import get_poster_url
 
 content_bp = Blueprint("content_based", __name__)
-imgscrape = ImageScraper()
 
 
 @content_bp.route("/homepage", methods=["GET"])
@@ -29,7 +28,7 @@ def show_content_based_recommendation():
 
     movie_inputs = []
     for movie in movie_list:
-        img_url = imgscrape.get_poster_url(movie)
+        img_url = get_poster_url(movie)
         movie_inputs.append({"movie_name": movie, "img_url": img_url})
 
     return render_template(

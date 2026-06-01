@@ -6,10 +6,9 @@ in Phase 4.
 from flask import Blueprint, render_template, request
 
 from app.services.collab_recommender import get_collaborative
-from app.services.poster_service import ImageScraper
+from app.services.poster_service import get_poster_url
 
 collaborative_bp = Blueprint("collaborative", __name__)
-imgscrape = ImageScraper()
 
 
 class UserIDException(Exception):
@@ -30,10 +29,10 @@ def show_recommendation():
         matrix_send_data = []
         knn_send_data = []
         for x in matrix_data:
-            url = imgscrape.get_poster_url(x)
+            url = get_poster_url(x)
             matrix_send_data.append(url)
         for x in knn_data:
-            url = imgscrape.get_poster_url(x)
+            url = get_poster_url(x)
             knn_send_data.append(url)
 
         return render_template(

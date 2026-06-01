@@ -1,37 +1,87 @@
-"""Poster image fetching service.
+"""Poster image fetching via the TMDB API.
 
-Phase 1: faithful port of the BeautifulSoup IMDb scraper from
-imagescraper.py. Replaced with TMDB API calls in Phase 3.
+Replaces the previous BeautifulSoup IMDb scraper. Given a movie title, this
+queries the TMDB search endpoint, takes the ``poster_path`` from the first
+result, and builds a full image URL. Results (including misses) are cached
+in-memory for the lifetime of the process so the same title is only fetched
+from TMDB once per session.
+
+The TMDB API key is read from the ``TMDB_API_KEY`` environment variable and
+is never hardcoded.
 """
-import json
+import os
+import re
 
 import requests
-from bs4 import BeautifulSoup
+
+# TMDB endpoints.
+TMDB_SEARCH_URL = "https://api.themoviedb.org/3/search/movie"
+TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
+
+# Returned when no poster can be found (or no API key is configured).
+PLACEHOLDER_POSTER_URL = (
+    "https://via.placeholder.com/500x750.png?text=No+Poster+Available"
+)
+
+# Network timeout for TMDB requests, in seconds.
+_REQUEST_TIMEOUT = 8
+
+# In-memory cache: {movie_title: poster_url}. Persists for the process
+# lifetime so repeated lookups of the same title don't re-hit the API.
+_poster_cache = {}
 
 
-class ImageScraper:
-    def beautiful_soup(self, url):
-        response = requests.get(url)
-        return BeautifulSoup(response.content, "html.parser")
+def _clean_title(title):
+    """Strip a trailing ``(YYYY)`` year suffix to improve TMDB match rate.
 
-    def get_IMDb_ID(self, title):
-        url = f"http://www.imdb.com/find?s=tt&q={title}"
-        soup = self.beautiful_soup(url)
-        if result := soup.find("a", {"class": "ipc-metadata-list-summary-item__t"}):
-            return result.get("href").split("/")[2]
-        return None
+    The precomputed collaborative datasets store titles like
+    ``"Shawshank Redemption, The (1994)"``; removing the year gives TMDB a
+    cleaner query. The original title is still used as the cache key.
+    """
+    return re.sub(r"\s*\(\d{4}\)\s*$", "", str(title)).strip()
 
-    def get_movie_info_IMDb(self, title):
-        imdb_id = self.get_IMDb_ID(title)
-        if not imdb_id:
-            return None
-        url = f"https://www.imdb.com/title/{imdb_id}/?ref_=fn_tt_tt_1"
-        soup = self.beautiful_soup(url)
-        return json.loads(
-            str(soup.findAll("script", {"type": "application/ld+json"})[0].text)
+
+def get_poster_url(title):
+    """Return a poster image URL for ``title``.
+
+    Looks the title up via the TMDB search API and returns the full URL of
+    the first result's poster. Falls back to a placeholder image when the
+    title is not found, the API key is missing, or the request fails.
+
+    Results are cached in-memory keyed by the original ``title``.
+    """
+    if title in _poster_cache:
+        return _poster_cache[title]
+
+    poster_url = _fetch_poster_url(title)
+    _poster_cache[title] = poster_url
+    return poster_url
+
+
+def _fetch_poster_url(title):
+    """Perform the actual TMDB lookup for ``title`` (uncached)."""
+    api_key = os.environ.get("TMDB_API_KEY")
+    if not api_key:
+        return PLACEHOLDER_POSTER_URL
+
+    params = {"api_key": api_key, "query": _clean_title(title)}
+    try:
+        response = requests.get(
+            TMDB_SEARCH_URL, params=params, timeout=_REQUEST_TIMEOUT
         )
+        response.raise_for_status()
+        results = response.json().get("results", [])
+    except (requests.RequestException, ValueError):
+        return PLACEHOLDER_POSTER_URL
 
-    def get_poster_url(self, title):
-        if movie_info := self.get_movie_info_IMDb(title):
-            return movie_info["image"]
-        return None
+    if results:
+        poster_path = results[0].get("poster_path")
+        if poster_path:
+            return f"{TMDB_IMAGE_BASE_URL}{poster_path}"
+
+    return PLACEHOLDER_POSTER_URL
+
+
+def clear_cache():
+    """Clear the in-memory poster cache (primarily for tests)."""
+    _poster_cache.clear()
