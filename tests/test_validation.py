@@ -104,7 +104,7 @@ def test_hybrid_accepts_ratings_signal(client):
 # ---------------------------------------------------------------------------
 # Collaborative user-id bounds via the schema
 # ---------------------------------------------------------------------------
-@pytest.mark.parametrize("bad_user", [0, 611, -1])
+@pytest.mark.parametrize("bad_user", [0, 162542, -1])
 def test_collaborative_rejects_out_of_range_user(client, bad_user):
     resp = client.post("/api/recommend/collaborative", json={"user_id": bad_user})
     assert resp.status_code == 400

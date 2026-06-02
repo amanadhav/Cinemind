@@ -19,6 +19,7 @@ PRECOMPUTED_DATA_DIR = os.path.join(DATA_DIR, "precomputed")
 CONTENT_TRAIN_CSV = os.path.join(
     PROCESSED_DATA_DIR, "content_based_final_data_train.csv"
 )
+SVD_MODEL_NPZ = os.path.join(PROCESSED_DATA_DIR, "svd_model.npz")
 RATINGS_CSV = os.path.join(RAW_DATA_DIR, "ratings.csv")
 MOVIES_CSV = os.path.join(RAW_DATA_DIR, "movies.csv")
 

@@ -11,8 +11,9 @@ from app.services import collab_recommender, content_recommender
 
 app = create_app()
 
-# Warm up both models at startup so the first request isn't slow. The SVD
-# factorization runs once here (~1s for MovieLens 100K).
+# Warm up both models at startup so the first request isn't slow. The
+# collaborative model loads precomputed SVD factors (~11 MB) rather than
+# training from raw ratings, so startup stays fast and low-memory.
 with app.app_context():
     collab_recommender.get_model()
     content_recommender.get_model()

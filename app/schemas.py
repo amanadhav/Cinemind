@@ -5,8 +5,8 @@ one place. Routes call :func:`validate` which turns any validation failure into
 a single ``ValidationError`` carrying a clean, client-safe message — caught by
 the app-wide error handler and returned as a 400.
 
-Bounds reflect the MovieLens 100K dataset:
-  * user ids   : 1..610
+Bounds reflect the MovieLens 25M dataset:
+  * user ids   : 1..162541
   * movie ids  : >= 1
   * ratings    : 0.5..5.0 (MovieLens half-star scale)
 """
@@ -20,9 +20,9 @@ from pydantic import (
     field_validator,
 )
 
-# MovieLens 100K bounds.
+# MovieLens 25M bounds.
 MIN_USER_ID = 1
-MAX_USER_ID = 610
+MAX_USER_ID = 162541
 MIN_RATING = 0.5
 MAX_RATING = 5.0
 MAX_QUERY_LEN = 100
