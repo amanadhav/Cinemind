@@ -37,6 +37,22 @@ const SPOTLIGHT_MOVIES = [
     overview: "Batman raises the stakes in his war on crime. With the help of Lt. Jim Gordon and District Attorney Harvey Dent, Batman sets out to dismantle the remaining criminal organizations.",
     backdrop: "https://image.tmdb.org/t/p/w1280/nMKdUUue58G7brq7iCs9454eaTk.jpg",
     poster: "https://image.tmdb.org/t/p/w500/qJ2t4EDteUQCbeF42qTz2Jd0cR5.jpg"
+  },
+  {
+    title: "The Matrix",
+    year: "1999",
+    tagline: "WELCOME TO THE REAL WORLD.",
+    overview: "Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.",
+    backdrop: "https://image.tmdb.org/t/p/w1280/8c4a8kE7PizaGQQnditMmI1xbRp.jpg",
+    poster: "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
+  },
+  {
+    title: "Avatar",
+    year: "2009",
+    tagline: "ENTER THE WORLD OF PANDORA.",
+    overview: "In the 22nd century, a paraplegic Marine is dispatched to the moon Pandora on a unique mission, but becomes torn between following orders and protecting an alien civilization.",
+    backdrop: "https://image.tmdb.org/t/p/w1280/vL5LR6WdxWPjUUegeVtCbB54dEP.jpg",
+    poster: "https://image.tmdb.org/t/p/w500/kyeqWdySqcIL1XirE9X0jG2pCqQ.jpg"
   }
 ];
 
@@ -57,6 +73,10 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    // Pick a random starting index on component mount
+    const initialIdx = Math.floor(Math.random() * SPOTLIGHT_MOVIES.length);
+    setSpotlightIdx(initialIdx);
+
     const timer = setInterval(() => {
       setSpotlightIdx((prev) => (prev + 1) % SPOTLIGHT_MOVIES.length);
     }, 5000);
@@ -83,7 +103,7 @@ export default function Home() {
           <div
             key={movie.title}
             className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-              idx === spotlightIdx ? "opacity-40" : "opacity-0"
+              idx === spotlightIdx ? "opacity-100" : "opacity-0"
             }`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -96,8 +116,8 @@ export default function Home() {
         ))}
 
         {/* Ambient Dark Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/50 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-black/20" />
 
         {/* Sprocket Film Strip Decoration (Top) */}
         <div className="absolute top-0 left-0 right-0 z-20">
