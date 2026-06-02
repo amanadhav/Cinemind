@@ -114,6 +114,16 @@ export const api = {
   popularMovies: (limit = 20) =>
     get<PopularMovie[]>(`/api/movies/popular?limit=${limit}`),
 
+  searchMovies: (q: string, limit = 8) =>
+    get<PopularMovie[]>(
+      `/api/movies/search?q=${encodeURIComponent(q)}&limit=${limit}`
+    ),
+
+  exploreMovies: (q: string) =>
+    get<{ matches: PopularMovie[]; similar: PopularMovie[] }>(
+      `/api/movies/explore?q=${encodeURIComponent(q)}`
+    ),
+
   rate: (ratings: UserRating[]) =>
     post<{ recommendations: Recommendation[] }>("/api/rate", { ratings }),
 

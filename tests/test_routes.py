@@ -147,6 +147,64 @@ def test_popular_movies_respects_limit(client):
 
 
 # ---------------------------------------------------------------------------
+# /api/movies/search
+# ---------------------------------------------------------------------------
+def test_search_movies_returns_rateable_objects(client):
+    resp = client.get("/api/movies/search?q=matrix&limit=5")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert isinstance(data, list)
+    assert 0 < len(data) <= 5
+    for item in data:
+        assert {"movie_id", "title", "genres", "poster_url"} <= set(item)
+        assert isinstance(item["movie_id"], int)
+        assert "matrix" in item["title"].lower()
+
+
+def test_search_movies_empty_query_returns_empty(client):
+    resp = client.get("/api/movies/search?q=")
+    assert resp.status_code == 200
+    assert resp.get_json() == []
+
+
+def test_search_movies_respects_limit(client):
+    resp = client.get("/api/movies/search?q=the&limit=3")
+    assert resp.status_code == 200
+    assert len(resp.get_json()) <= 3
+
+
+# ---------------------------------------------------------------------------
+# /api/movies/explore
+# ---------------------------------------------------------------------------
+def test_explore_splits_matches_and_similar(client):
+    resp = client.get("/api/movies/explore?q=toy story")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert set(data.keys()) == {"matches", "similar"}
+    # "Toy Story" should surface the franchise in matches.
+    match_titles = " ".join(m["title"].lower() for m in data["matches"])
+    assert "toy story" in match_titles
+    # Each item in both sections is a rateable movie object.
+    for item in data["matches"] + data["similar"]:
+        assert {"movie_id", "title", "genres", "poster_url"} <= set(item)
+        assert isinstance(item["movie_id"], int)
+
+
+def test_explore_dedupes_matches_from_similar(client):
+    resp = client.get("/api/movies/explore?q=toy story")
+    data = resp.get_json()
+    match_ids = {m["movie_id"] for m in data["matches"]}
+    similar_ids = {m["movie_id"] for m in data["similar"]}
+    assert match_ids.isdisjoint(similar_ids)
+
+
+def test_explore_empty_query(client):
+    resp = client.get("/api/movies/explore?q=")
+    assert resp.status_code == 200
+    assert resp.get_json() == {"matches": [], "similar": []}
+
+
+# ---------------------------------------------------------------------------
 # /api/recommend/hybrid
 # ---------------------------------------------------------------------------
 def test_hybrid_endpoint_returns_blend(client):

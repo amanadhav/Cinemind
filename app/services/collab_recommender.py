@@ -15,6 +15,7 @@ At request time:
 The ML lives here, decoupled from Flask, so it can be unit-tested directly.
 """
 import logging
+import re
 
 import numpy as np
 import pandas as pd
@@ -34,6 +35,22 @@ MAX_USER_ID = 610
 
 # Module-level singletons, populated on the first call to ``get_model()``.
 _model = None
+
+
+def normalize_title(title):
+    """Normalize a movie title for cross-dataset matching.
+
+    Strips a trailing ``(YYYY)`` year, moves a trailing article (``", The"``,
+    ``", A"``, ``", An"``) back to the front, lowercases, and removes all
+    non-alphanumeric characters. This lets MovieLens titles like
+    ``"Matrix, The (1999)"`` match content-dataset titles like ``"the matrix"``.
+    """
+    text = re.sub(r"\s*\(\d{4}\)\s*$", "", str(title)).strip()
+    # Move a trailing article to the front: "Matrix, The" -> "The Matrix".
+    m = re.match(r"^(.*),\s+(The|A|An)$", text, flags=re.IGNORECASE)
+    if m:
+        text = f"{m.group(2)} {m.group(1)}"
+    return re.sub(r"[^a-z0-9]", "", text.lower())
 
 
 class _CollabModel:
@@ -58,6 +75,20 @@ class _CollabModel:
         self._popularity = (
             ratings.groupby("movieId").size().sort_values(ascending=False)
         )
+
+        # Normalized-title -> movieId index, used to resolve titles coming from
+        # the content recommender (which carries titles only, no ids) back to
+        # rateable MovieLens ids. On collision, prefer the more popular movie.
+        self._id_by_norm_title = {}
+        for mid, title in self.title_by_id.items():
+            key = normalize_title(title)
+            if not key:
+                continue
+            existing = self._id_by_norm_title.get(key)
+            if existing is None or self._popularity.get(mid, 0) > self._popularity.get(
+                existing, 0
+            ):
+                self._id_by_norm_title[key] = mid
 
         # Build the dense user-item matrix from a sparse construction.
         rows = ratings["userId"].map(self.user_pos).to_numpy()
@@ -149,7 +180,66 @@ class _CollabModel:
             )
         return out
 
+    # -- catalog search --------------------------------------------------
+    def search_movies(self, query, limit=8):
+        """Search rateable movies by title substring.
+
+        Only returns movies present in the rating matrix (``movie_pos``) so the
+        results can actually be folded into the SVD cold-start. Prefix matches
+        are ranked above mid-string matches, then ordered by popularity so the
+        most recognizable titles surface first.
+
+        Returns a list of ``{movie_id, title, genres}``.
+        """
+        q = str(query).strip().lower()
+        if not q:
+            return []
+
+        starts, contains = [], []
+        for mid, title in self.title_by_id.items():
+            if mid not in self.movie_pos:
+                continue  # not in the rating matrix -> can't be folded in
+            name = str(title).lower()
+            if name.startswith(q):
+                starts.append(mid)
+            elif q in name:
+                contains.append(mid)
+
+        # Rank each bucket by popularity (rating count), descending.
+        def by_popularity(mid):
+            return -int(self._popularity.get(mid, 0))
+
+        starts.sort(key=by_popularity)
+        contains.sort(key=by_popularity)
+
+        out = []
+        for mid in (starts + contains)[:limit]:
+            out.append(
+                {
+                    "movie_id": int(mid),
+                    "title": self.title_by_id.get(mid, str(mid)),
+                    "genres": self.genres_by_id.get(mid, ""),
+                }
+            )
+        return out
+
     # -- helpers ---------------------------------------------------------
+    def resolve_title(self, title):
+        """Resolve a free-form title to a rateable ``{movie_id, title, genres}``.
+
+        Returns ``None`` if the title can't be matched to a MovieLens movie
+        that exists in the rating matrix.
+        """
+        key = normalize_title(title)
+        mid = self._id_by_norm_title.get(key)
+        if mid is None or mid not in self.movie_pos:
+            return None
+        return {
+            "movie_id": int(mid),
+            "title": self.title_by_id.get(mid, str(mid)),
+            "genres": self.genres_by_id.get(mid, ""),
+        }
+
     def _top_n(self, predicted, exclude_mask, n):
         scores = predicted.copy()
         scores[exclude_mask] = -np.inf
@@ -203,3 +293,13 @@ def recommend_for_new_user(ratings, n=10):
 def popular_movies(n=20):
     """The ``n`` most-rated movies, used to seed the rating UI."""
     return get_model().popular_movies(n=n)
+
+
+def search_movies(query, limit=8):
+    """Search rateable movies by title (returns dicts with movie_id)."""
+    return get_model().search_movies(query, limit=limit)
+
+
+def resolve_title(title):
+    """Resolve a free-form title to a rateable movie dict, or None."""
+    return get_model().resolve_title(title)

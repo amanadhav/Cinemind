@@ -104,7 +104,12 @@ export function DiscoverTab() {
               {suggestions.map((title) => (
                 <button
                   key={title}
-                  onClick={() => {
+                  // Use onMouseDown + preventDefault so the Input never loses
+                  // focus in a way that re-triggers onFocus → setShowSuggestions.
+                  // This means a single click reliably selects and closes.
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setShowSuggestions(false);
                     setQuery(title);
                     runSearch(title);
                   }}
