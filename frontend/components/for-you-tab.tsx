@@ -357,20 +357,7 @@ export function ForYouTab() {
           Tell us what you&apos;ve seen
         </h2>
         
-        {/* Apple Style Dot/Star Separator */}
-        <div className="mx-auto flex max-w-[200px] items-center justify-center gap-3">
-          <div className="h-px w-8 bg-white/10" />
-          <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
-          <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
-          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-[#2997ff]">
-            <span className="text-[10px] text-white">★</span>
-          </div>
-          <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
-          <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
-          <div className="h-px w-8 bg-white/10" />
-        </div>
-
-        <p className="mt-6 text-sm text-zinc-400 max-w-lg mx-auto">
+        <p className="mt-2 text-sm text-zinc-400 max-w-lg mx-auto">
           Rate at least {MIN_RATINGS} movies and we&apos;ll build your taste profile. Search to add any title, or rate the popular ones below.
         </p>
       </div>

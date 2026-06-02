@@ -104,6 +104,34 @@ export default function Home() {
 
   const activeMovie = activeSpotlightMovies[spotlightIdx];
 
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+
+  const nextSpotlight = () => {
+    if (activeSpotlightMovies.length === 0) return;
+    setSpotlightIdx((prev) => (prev + 1) % activeSpotlightMovies.length);
+  };
+
+  const prevSpotlight = () => {
+    if (activeSpotlightMovies.length === 0) return;
+    setSpotlightIdx((prev) => (prev - 1 + activeSpotlightMovies.length) % activeSpotlightMovies.length);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const distance = touchStart - touchEnd;
+    if (distance > 50) {
+      nextSpotlight();
+    } else if (distance < -50) {
+      prevSpotlight();
+    }
+    setTouchStart(null);
+  };
+
   const handleSpotlightSimilar = (movieTitle: string) => {
     setDiscoverSeed(movieTitle);
     setActiveTab("discover");
@@ -158,7 +186,12 @@ export default function Home() {
       <div className="absolute left-[15%] top-[10%] h-[400px] w-[400px] bg-white/5 bg-glow-sphere animate-pulse-slow" />
       <div className="absolute right-[5%] top-[25%] h-[500px] w-[500px] bg-white/5 bg-glow-sphere animate-pulse-slow-reverse" />
 
-      <header className="relative w-full h-[70vh] min-h-[600px] max-h-[800px] bg-zinc-950 overflow-hidden">
+      {/* Cinematic Spotlight Header */}
+      <header 
+        className="relative group w-full h-[70vh] min-h-[500px] md:h-[80vh] md:min-h-[600px] overflow-hidden bg-[#111]"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {loadingSpotlight ? (
           <div className="absolute inset-0 flex items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-white/50" />
@@ -247,30 +280,50 @@ export default function Home() {
                       <Bookmark className={`h-4 w-4 ${getWatchlist().some((x) => x.title.toLowerCase() === activeMovie.title.toLowerCase()) ? "fill-white text-white" : "text-white"}`} />
                     </button>
                   </div>
-                  
-                  {/* Apple Style Pagination Dots */}
-                  <div className="flex items-center gap-3 pt-8">
-                    {activeSpotlightMovies.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setSpotlightIdx(idx)}
-                        className="relative flex items-center justify-center w-4 h-4"
-                        aria-label={`Go to slide ${idx + 1}`}
-                      >
-                        {/* The dot itself */}
-                        <span className={`rounded-full transition-all duration-300 ${
-                          idx === spotlightIdx ? "w-1.5 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/40 hover:bg-white/70"
-                        }`} />
-                        
-                        {/* The active ring */}
-                        {idx === spotlightIdx && (
-                          <span className="absolute inset-0 rounded-full border-[1.5px] border-[#2997ff] scale-125" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               )}
+            </div>
+
+            {/* Desktop Navigation Hover Buttons */}
+            {/* Left Button (Pointer events auto only on button so it doesn't block movie actions) */}
+            <div className="absolute inset-y-0 left-4 z-40 hidden md:flex items-center pointer-events-none">
+              <button 
+                onClick={prevSpotlight}
+                className="pointer-events-auto h-12 w-12 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:bg-black/60 hover:scale-110 border border-white/20 opacity-0 group-hover:opacity-100 shadow-2xl"
+                aria-label="Previous movie"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+            </div>
+            
+            {/* Right Side Click Zone & Button */}
+            <div 
+              className="absolute inset-y-0 right-0 w-1/3 z-40 hidden md:flex items-center justify-end px-4 cursor-pointer"
+              onClick={nextSpotlight}
+              aria-label="Next movie"
+            >
+              <div className="h-12 w-12 flex items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:bg-black/60 hover:scale-110 border border-white/20 opacity-0 group-hover:opacity-100 shadow-2xl">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+            </div>
+
+            {/* Centered Pagination Dots */}
+            <div className="absolute bottom-[100px] left-0 right-0 z-40 flex justify-center items-center gap-3">
+              {activeSpotlightMovies.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSpotlightIdx(idx)}
+                  className="relative flex items-center justify-center w-4 h-4"
+                  aria-label={`Go to slide ${idx + 1}`}
+                >
+                  <span className={`rounded-full transition-all duration-300 ${
+                    idx === spotlightIdx ? "w-1.5 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/40 hover:bg-white/70"
+                  }`} />
+                  {idx === spotlightIdx && (
+                    <span className="absolute inset-0 rounded-full border-[1.5px] border-[#2997ff] scale-125" />
+                  )}
+                </button>
+              ))}
             </div>
           </>
         )}
