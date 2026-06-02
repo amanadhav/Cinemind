@@ -1,6 +1,6 @@
 # CineMind
 
-**[Live Demo](https://cinemind.vercel.app)**
+**[Live Demo](https://cinemind-prod.vercel.app)**
 
 CineMind is a full-stack movie recommendation system. It combines **content-based
 filtering** (TF-IDF over genres, keywords, cast and crew with cosine-similarity
