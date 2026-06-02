@@ -129,8 +129,8 @@ export function HybridTab() {
               />
             </div>
             {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-border bg-[#111] shadow-lg">
-                {suggestions.map((title) => (
+              <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-white/10 bg-[#111] shadow-2xl backdrop-blur-xl">
+                {suggestions.map((title, idx) => (
                   <button
                     key={title}
                     onMouseDown={(e) => {
@@ -139,7 +139,9 @@ export function HybridTab() {
                       setQuery(title);
                       setShowSuggestions(false);
                     }}
-                    className="block w-full border-l-2 border-transparent px-4 py-2.5 text-left text-sm transition-colors hover:border-gold hover:bg-accent"
+                    className={`block w-full px-5 py-3 text-left text-sm font-medium transition-all hover:bg-white/10 hover:text-white text-zinc-300 ${
+                      idx !== suggestions.length - 1 ? "border-b border-white/5" : ""
+                    }`}
                   >
                     {title}
                   </button>

@@ -352,18 +352,26 @@ export function ForYouTab() {
   // ---- Rating screen ----
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold tracking-tight">
-          Tell us what you&apos;ve seen
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold tracking-tight text-white mb-4">
+          Tell us what you've seen
         </h2>
-        <div className="mx-auto mt-2 flex max-w-[120px] items-center gap-1.5">
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent to-gold/50" />
-          <span className="text-gold">★</span>
-          <div className="h-px flex-1 bg-gradient-to-l from-transparent to-gold/50" />
+        
+        {/* Apple Style Dot/Star Separator */}
+        <div className="mx-auto flex max-w-[200px] items-center justify-center gap-3">
+          <div className="h-px w-8 bg-white/10" />
+          <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
+          <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
+          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-[#2997ff]">
+            <span className="text-[10px] text-white">★</span>
+          </div>
+          <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
+          <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
+          <div className="h-px w-8 bg-white/10" />
         </div>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Rate at least {MIN_RATINGS} movies and we&apos;ll build your taste
-          profile. Search to add any title, or rate the popular ones below.
+
+        <p className="mt-6 text-sm text-zinc-400 max-w-lg mx-auto">
+          Rate at least {MIN_RATINGS} movies and we'll build your taste profile. Search to add any title, or rate the popular ones below.
         </p>
       </div>
 
@@ -391,8 +399,8 @@ export function ForYouTab() {
             </button>
           </div>
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-border bg-[#111] shadow-lg">
-              {suggestions.map((m) => (
+            <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-white/10 bg-[#111] shadow-2xl backdrop-blur-xl">
+              {suggestions.map((m, idx) => (
                 <button
                   key={m.movie_id}
                   type="button"
@@ -400,7 +408,9 @@ export function ForYouTab() {
                     e.preventDefault();
                     addMovie(m);
                   }}
-                  className="block w-full border-l-2 border-transparent px-4 py-2.5 text-left text-sm transition-colors hover:border-gold hover:bg-accent"
+                  className={`block w-full px-5 py-3 text-left text-sm font-medium transition-all hover:bg-white/10 hover:text-white text-zinc-300 ${
+                    idx !== suggestions.length - 1 ? "border-b border-white/5" : ""
+                  }`}
                 >
                   {m.title}
                 </button>
@@ -411,32 +421,32 @@ export function ForYouTab() {
       </div>
 
       {/* progress panel & taste profile side by side if there are ratings! */}
-      <div className="grid gap-6 md:grid-cols-3 items-start max-w-4xl mx-auto w-full">
-        <div className="md:col-span-2 flex flex-col gap-3 rounded-lg border border-border/60 bg-card/90 p-5 backdrop-blur">
-          <Button
+      <div className="grid gap-6 md:grid-cols-3 items-start max-w-4xl mx-auto w-full mt-10">
+        <div className="md:col-span-2 flex flex-col justify-center h-[140px] rounded-xl border border-white/10 bg-[#111] p-6 shadow-xl">
+          <button
             onClick={submit}
             disabled={!canSubmit || submitting}
-            className="w-full rounded-md uppercase tracking-wider"
+            className="w-full h-12 rounded-lg bg-[#8C8C8C] hover:bg-[#A0A0A0] disabled:opacity-50 disabled:hover:bg-[#8C8C8C] transition-colors text-xs font-bold text-[#1a1a1a] uppercase tracking-wider flex items-center justify-center gap-2 mb-4"
           >
             <Sparkles className="h-4 w-4" />
             {submitting ? "Crunching..." : "Get My Recommendations"}
-          </Button>
+          </button>
           {/* Progress indicator below the button. */}
-          <div className="flex w-full items-center gap-2">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
+          <div className="flex w-full items-center gap-4">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
               <div
-                className="h-full rounded-full bg-gold transition-all duration-300"
+                className="h-full rounded-full bg-white transition-all duration-300"
                 style={{
                   width: `${Math.min(100, (ratedCount / MIN_RATINGS) * 100)}%`,
                 }}
               />
             </div>
-            <span className="text-xs tabular-nums text-muted-foreground">
+            <span className="text-xs tabular-nums text-white/50">
               {ratedCount} / {MIN_RATINGS} rated
             </span>
           </div>
         </div>
-        <div className="md:col-span-1">
+        <div className="md:col-span-1 h-[140px] rounded-xl border border-white/10 bg-[#111] overflow-hidden flex flex-col">
           <TasteProfile ratings={ratings} movies={ratingGrid} />
         </div>
       </div>

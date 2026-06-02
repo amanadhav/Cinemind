@@ -115,39 +115,35 @@ export default function Home() {
       <nav className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-6 md:px-12 bg-gradient-to-b from-black/90 via-black/40 to-transparent">
         <div className="flex items-center gap-12">
           {/* Logo */}
-          <div className="flex items-center gap-0.5 cursor-pointer" onClick={() => setActiveTab("for-you")}>
-            <span className="text-3xl font-black italic tracking-tighter text-white">M</span>
-            <span className="text-2xl font-bold italic tracking-tighter text-white">oov</span>
-          </div>
-          
-          {/* Tab Links */}
-          <div className="hidden md:flex items-center gap-8 text-sm font-semibold tracking-wide">
-            <button 
-              onClick={() => setActiveTab("for-you")} 
-              className={`transition-colors ${activeTab === "for-you" ? "text-white" : "text-white/60 hover:text-white"}`}
-            >
-              Home
-            </button>
-            <button 
-              onClick={() => setActiveTab("discover")} 
-              className={`transition-colors ${activeTab === "discover" ? "text-white" : "text-white/60 hover:text-white"}`}
-            >
-              Movies
-            </button>
-            <button 
-              onClick={() => setActiveTab("mix-it")} 
-              className={`transition-colors ${activeTab === "mix-it" ? "text-white" : "text-white/60 hover:text-white"}`}
-            >
-              Series
-            </button>
+          <div className="flex items-center gap-0.5 cursor-pointer z-10" onClick={() => setActiveTab("for-you")}>
+            <span className="text-2xl font-black tracking-tight text-white uppercase drop-shadow-md">CineMind</span>
           </div>
         </div>
 
-        {/* Right Icons */}
-        <div className="flex items-center gap-6">
-          <button onClick={() => setActiveTab("discover")} className="text-white hover:text-white/80 transition-colors">
-            <Search className="h-5 w-5" />
+        {/* Centered Tab Links */}
+        <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-8 text-sm font-semibold tracking-wide">
+          <button 
+            onClick={() => setActiveTab("for-you")} 
+            className={`transition-colors ${activeTab === "for-you" ? "text-white" : "text-white/60 hover:text-white"}`}
+          >
+            Home
           </button>
+          <button 
+            onClick={() => setActiveTab("discover")} 
+            className={`transition-colors ${activeTab === "discover" ? "text-white" : "text-white/60 hover:text-white"}`}
+          >
+            Movies
+          </button>
+          <button 
+            onClick={() => setActiveTab("mix-it")} 
+            className={`transition-colors ${activeTab === "mix-it" ? "text-white" : "text-white/60 hover:text-white"}`}
+          >
+            Series
+          </button>
+        </div>
+
+        {/* Right Icons */}
+        <div className="flex items-center gap-6 z-10">
           <button onClick={() => setWatchlistOpen(true)} className="relative text-white hover:text-white/80 transition-colors">
             <Bell className="h-5 w-5" />
             {watchlistCount > 0 && (
@@ -156,9 +152,6 @@ export default function Home() {
               </span>
             )}
           </button>
-          <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-white to-gray-500 cursor-pointer overflow-hidden border border-white/20">
-            <User className="h-full w-full p-1 text-black/40 mt-1" />
-          </div>
         </div>
       </nav>
 
@@ -259,7 +252,7 @@ export default function Home() {
             </div>
 
             {/* Apple Style Pagination Dots */}
-            <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center items-center gap-3">
+            <div className="absolute bottom-[120px] left-0 right-0 z-20 flex justify-center items-center gap-3">
               {activeSpotlightMovies.map((_, idx) => (
                 <button
                   key={idx}
