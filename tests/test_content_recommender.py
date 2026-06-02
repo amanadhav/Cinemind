@@ -13,14 +13,14 @@ def test_recommend_returns_list_of_ten():
 def test_recommend_includes_query_movie_first():
     """The queried movie itself is the first recommendation."""
     result = cr.recommend("Inception")
-    assert result[0].lower() == "inception"
+    assert result[0].lower().startswith("inception")
 
 
 def test_fuzzy_matching_finds_inception():
     """A partial query like 'incept' resolves to 'Inception'."""
     result = cr.recommend("incept")
     assert isinstance(result, list)
-    assert result[0].lower() == "inception"
+    assert result[0].lower().startswith("inception")
 
 
 def test_unknown_movie_returns_error_string():

@@ -1,6 +1,4 @@
 """Tests for the real-time SVD collaborative recommender."""
-import numpy as np
-
 from app.services import collab_recommender as cr
 
 
@@ -11,25 +9,15 @@ def test_model_trains_and_caches():
     assert cr.is_model_loaded() is True
 
 
-def test_known_user_recommendations_shape():
+def test_known_user_recommendation_disabled():
+    """Known-user recs are intentionally disabled with the compact model.
+
+    The deployed model stores only item factors (not per-user factors), so
+    ``recommend_for_user`` returns an empty list. The product uses the
+    cold-start fold-in flow instead.
+    """
     recs = cr.recommend_for_user(42, n=10)
-    assert isinstance(recs, list)
-    assert len(recs) == 10
-    for item in recs:
-        assert {"movie_id", "title", "genres", "score"} <= set(item)
-
-
-def test_known_user_excludes_rated_movies():
-    """A user's already-rated movies must not appear in their recommendations."""
-    model = cr.get_model()
-    pos = model.user_pos[1]
-    rated_ids = {
-        int(model.movie_ids[i])
-        for i in np.where(model._dense[pos] > 0)[0]
-    }
-    recs = cr.recommend_for_user(1, n=10)
-    rec_ids = {r["movie_id"] for r in recs}
-    assert rec_ids.isdisjoint(rated_ids)
+    assert recs == []
 
 
 def test_cold_start_excludes_provided_ratings():
@@ -90,5 +78,7 @@ def test_valid_user_id_range():
     assert cr.is_valid_user_id(1) is True
     assert cr.is_valid_user_id(610) is True
     assert cr.is_valid_user_id(0) is False
-    assert cr.is_valid_user_id(611) is False
+    # ML-25M has 162,541 users, so IDs well above the old 610 bound are valid.
+    assert cr.is_valid_user_id(162541) is True
+    assert cr.is_valid_user_id(162542) is False
     assert cr.is_valid_user_id("42") is False

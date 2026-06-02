@@ -66,6 +66,9 @@ def recommend(choice, n_results=10):
     data, model, tfidf_matrix = get_model()
 
     # Normalize the query the same way the stored titles were normalized.
+    # First strip a trailing year "(YYYY)" so "Inception (2010)" matches
+    # "Inception" in the database.
+    choice = re.sub(r"\s*\(\d{4}\)\s*$", "", str(choice)).strip()
     choice = re.sub("[^a-zA-Z1-9]", "", choice).lower()
 
     if choice in data["title"].values:
@@ -78,15 +81,25 @@ def recommend(choice, n_results=10):
         return "opps! movie not found in our database"
 
     choice_index = data[data["title"] == match_title].index.values[0]
-    # Request one extra neighbour so we can still return n_results.
+    matched_original = data[data["title"] == match_title]["original_title"].values[0]
+
+    # Request extra neighbours to account for deduplication, then exclude
+    # the matched movie itself from the similar list.
     distances, indices = model.kneighbors(
-        tfidf_matrix[choice_index], n_neighbors=n_results + 6
+        tfidf_matrix[choice_index], n_neighbors=n_results + 10
     )
-    movie_list = [
-        data[data.index == i]["original_title"].values[0].title()
-        for i in indices.flatten()
-    ]
-    return movie_list[:n_results]
+    similar = []
+    for i in indices.flatten():
+        if i == choice_index:
+            continue  # skip the query movie from the similar list
+        title = data[data.index == i]["original_title"].values[0].title()
+        if title not in similar:
+            similar.append(title)
+        if len(similar) >= n_results - 1:
+            break
+
+    # Always put the matched movie first so "Best match" is always correct.
+    return [matched_original.title()] + similar
 
 
 def search_titles(query, limit=10):
@@ -97,6 +110,8 @@ def search_titles(query, limit=10):
     alphabetically. Used by the search/autocomplete endpoint.
     """
     query = str(query).strip().lower()
+    # Strip trailing year from query so "inception (2010" still matches
+    query = re.sub(r"\s*\(\d{4}\)?\s*$", "", query).strip()
     if not query:
         return []
 
