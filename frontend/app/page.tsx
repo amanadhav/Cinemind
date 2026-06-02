@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clapperboard, Bookmark, Sparkles } from "lucide-react";
+import { Clapperboard, Bookmark, Sparkles, Loader2 } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DiscoverTab } from "@/components/discover-tab";
@@ -10,58 +10,49 @@ import { HybridTab } from "@/components/hybrid-tab";
 import { HowItWorks } from "@/components/how-it-works";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { WatchlistDrawer, getWatchlist, addToWatchlist, removeFromWatchlist } from "@/components/watchlist-drawer";
-import { MoviePoster } from "@/components/movie-poster";
 import { Button } from "@/components/ui/button";
 
-const SPOTLIGHT_MOVIES = [
-  {
-    title: "Inception",
-    year: "2010",
-    tagline: "YOUR MIND IS THE SCENE OF THE CRIME.",
-    overview: "Cobb, a skilled thief who steals valuable secrets from deep within the subconscious during the dream state, is offered a chance to have his criminal record erased.",
-    backdrop: "https://image.tmdb.org/t/p/w1280/8ZcrwwLNfvkrBEGg447875bgF0G.jpg",
-    poster: "https://image.tmdb.org/t/p/w500/l9upL7lQ4n2UF19mZ2K6FSvcj2q.jpg"
-  },
-  {
-    title: "Interstellar",
-    year: "2014",
-    tagline: "MANKIND WAS BORN ON EARTH. IT WAS NEVER MEANT TO DIE HERE.",
-    overview: "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel.",
-    backdrop: "https://image.tmdb.org/t/p/w1280/xJHokZBLjvjEZ79051675crdrf5.jpg",
-    poster: "https://image.tmdb.org/t/p/w500/gEU2Qv4z3eR3v2547as27sl21V1.jpg"
-  },
-  {
-    title: "The Dark Knight",
-    year: "2008",
-    tagline: "WHY SO SERIOUS?",
-    overview: "Batman raises the stakes in his war on crime. With the help of Lt. Jim Gordon and District Attorney Harvey Dent, Batman sets out to dismantle the remaining criminal organizations.",
-    backdrop: "https://image.tmdb.org/t/p/w1280/nMKdUUue58G7brq7iCs9454eaTk.jpg",
-    poster: "https://image.tmdb.org/t/p/w500/qJ2t4EDteUQCbeF42qTz2Jd0cR5.jpg"
-  },
-  {
-    title: "The Matrix",
-    year: "1999",
-    tagline: "WELCOME TO THE REAL WORLD.",
-    overview: "Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.",
-    backdrop: "https://image.tmdb.org/t/p/w1280/8c4a8kE7PizaGQQnditMmI1xbRp.jpg",
-    poster: "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
-  },
-  {
-    title: "Avatar",
-    year: "2009",
-    tagline: "ENTER THE WORLD OF PANDORA.",
-    overview: "In the 22nd century, a paraplegic Marine is dispatched to the moon Pandora on a unique mission, but becomes torn between following orders and protecting an alien civilization.",
-    backdrop: "https://image.tmdb.org/t/p/w1280/vL5LR6WdxWPjUUegeVtCbB54dEP.jpg",
-    poster: "https://image.tmdb.org/t/p/w500/kyeqWdySqcIL1XirE9X0jG2pCqQ.jpg"
-  }
+const FAMOUS_100_TITLES = [
+  "The Godfather", "The Shawshank Redemption", "Schindler's List", "Raging Bull", "Casablanca",
+  "Citizen Kane", "Gone with the Wind", "The Wizard of Oz", "One Flew Over the Cuckoo's Nest", "Lawrence of Arabia",
+  "Vertigo", "Psycho", "The Godfather Part II", "On the Waterfront", "Sunset Boulevard",
+  "Forrest Gump", "The Sound of Music", "12 Angry Men", "West Side Story", "Star Wars",
+  "2001: A Space Odyssey", "E.T. the Extra-Terrestrial", "The Silence of the Lambs", "Chinatown", "Some Like It Hot",
+  "It's a Wonderful Life", "Amadeus", "Apocalypse Now", "The Lord of the Rings: The Return of the King", "Gladiator",
+  "Titanic", "Saving Private Ryan", "Unforgiven", "Raiders of the Lost Ark", "Rocky",
+  "A Streetcar Named Desire", "The Philadelphia Story", "To Kill a Mockingbird", "An American in Paris", "The Best Years of Our Lives",
+  "My Fair Lady", "A Clockwork Orange", "Taxi Driver", "Jaws", "Butch Cassidy and the Sundance Kid",
+  "The Treasure of the Sierra Madre", "Annie Hall", "Out of Africa", "Goodfellas", "Pulp Fiction",
+  "The Matrix", "Inception", "Interstellar", "The Dark Knight", "Avatar",
+  "Jurassic Park", "Braveheart", "Dances with Wolves", "The Lion King", "Terminator 2: Judgment Day",
+  "Back to the Future", "Blade Runner", "Alien", "Die Hard", "The Shining",
+  "A Beautiful Mind", "The Departed", "No Country for Old Men", "Slumdog Millionaire", "The King's Speech",
+  "12 Years a Slave", "Birdman", "Spotlight", "Moonlight", "The Shape of Water",
+  "Green Book", "Parasite", "Everything Everywhere All at Once", "Oppenheimer", "Fight Club",
+  "The Lord of the Rings: The Fellowship of the Ring", "The Lord of the Rings: The Two Towers", "Star Wars: Episode V - The Empire Strikes Back", "Good Will Hunting", "The Truman Show",
+  "Catch Me If You Can", "The Social Network", "Whiplash", "Mad Max: Fury Road", "La La Land",
+  "Joker", "Spider-Man: Into the Spider-Verse", "Toy Story", "Finding Nemo", "Up",
+  "WALL-E", "Inside Out", "Coco", "Spirited Away", "Princess Mononoke"
 ];
+
+function shuffleArray(array: string[]) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 export default function Home() {
   const [watchlistOpen, setWatchlistOpen] = useState(false);
   const [watchlistCount, setWatchlistCount] = useState(0);
   const [activeTab, setActiveTab] = useState("for-you");
-  const [spotlightIdx, setSpotlightIdx] = useState(0);
   const [discoverSeed, setDiscoverSeed] = useState("");
+
+  const [activeSpotlightMovies, setActiveSpotlightMovies] = useState<any[]>([]);
+  const [spotlightIdx, setSpotlightIdx] = useState(0);
+  const [loadingSpotlight, setLoadingSpotlight] = useState(true);
 
   useEffect(() => {
     setWatchlistCount(getWatchlist().length);
@@ -73,17 +64,46 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Pick a random starting index on component mount
-    const initialIdx = Math.floor(Math.random() * SPOTLIGHT_MOVIES.length);
-    setSpotlightIdx(initialIdx);
-
-    const timer = setInterval(() => {
-      setSpotlightIdx((prev) => (prev + 1) % SPOTLIGHT_MOVIES.length);
-    }, 5000);
-    return () => clearInterval(timer);
+    async function initSpotlight() {
+      const watchlist = getWatchlist();
+      let pool: string[] = [];
+      
+      if (watchlist.length > 10) {
+        pool = watchlist.map((m) => m.title);
+      } else {
+        pool = FAMOUS_100_TITLES;
+      }
+      
+      const selectedTitles = shuffleArray(pool).slice(0, 5);
+      
+      try {
+        const fetchPromises = selectedTitles.map(async (title) => {
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+          const res = await fetch(`${baseUrl}/api/movie/detail?title=${encodeURIComponent(title)}`);
+          if (!res.ok) throw new Error("Failed to fetch");
+          return await res.json();
+        });
+        const results = await Promise.all(fetchPromises);
+        setActiveSpotlightMovies(results);
+        setSpotlightIdx(0);
+      } catch (err) {
+        console.error("Failed to load spotlight movies", err);
+      } finally {
+        setLoadingSpotlight(false);
+      }
+    }
+    initSpotlight();
   }, []);
 
-  const activeMovie = SPOTLIGHT_MOVIES[spotlightIdx];
+  useEffect(() => {
+    if (activeSpotlightMovies.length === 0) return;
+    const timer = setInterval(() => {
+      setSpotlightIdx((prev) => (prev + 1) % activeSpotlightMovies.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [activeSpotlightMovies.length]);
+
+  const activeMovie = activeSpotlightMovies[spotlightIdx];
 
   const handleSpotlightSimilar = (movieTitle: string) => {
     setDiscoverSeed(movieTitle);
@@ -92,102 +112,118 @@ export default function Home() {
 
   return (
     <main className="relative min-h-screen overflow-hidden pb-16">
-      {/* Ambient background glows */}
       <div className="absolute left-[15%] top-[10%] h-[400px] w-[400px] bg-gold/5 bg-glow-sphere animate-pulse-slow" />
       <div className="absolute right-[5%] top-[25%] h-[500px] w-[500px] bg-rose-500/5 bg-glow-sphere animate-pulse-slow-reverse" />
 
-      {/* Cinematic Spotlight Banner */}
       <header className="relative w-full h-[520px] bg-zinc-950 overflow-hidden border-b border-border/40">
-        {/* Backdrop images with fade transitions */}
-        {SPOTLIGHT_MOVIES.map((movie, idx) => (
-          <div
-            key={movie.title}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-              idx === spotlightIdx ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={movie.backdrop}
-              alt={movie.title}
-              className="w-full h-full object-cover object-center scale-105"
-            />
+        {loadingSpotlight ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-gold" />
           </div>
-        ))}
+        ) : (
+          <>
+            {activeSpotlightMovies.map((movie, idx) => (
+              <div
+                key={movie.title}
+                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                  idx === spotlightIdx ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                {movie.backdrop_url ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={movie.backdrop_url}
+                    alt={movie.title}
+                    className="w-full h-full object-cover object-center scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-zinc-900" />
+                )}
+              </div>
+            ))}
 
-        {/* Ambient Dark Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-black/20" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-black/40 to-black/20" />
 
-        {/* Sprocket Film Strip Decoration (Top) */}
+            <div className="absolute inset-0 z-10 flex flex-col justify-center items-center">
+              
+              <div className="text-center animate-fade-in-up mt-[-60px]">
+                <p className="text-gold uppercase font-bold tracking-[0.5em] text-sm mb-2 opacity-80">
+                  Welcome to
+                </p>
+                <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-white/90 to-white/20 title-glow-gold drop-shadow-2xl">
+                  CINEMIND
+                </h1>
+              </div>
+
+              {activeMovie && (
+                <div key={spotlightIdx} className="absolute bottom-12 left-6 md:left-12 max-w-xl glass-panel p-5 rounded-2xl animate-fade-in-up bg-black/60 border border-white/10 shadow-2xl backdrop-blur-md">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold tracking-widest uppercase shadow-[0_0_10px_rgba(245,158,11,0.3)]">
+                      <Clapperboard className="h-3 w-3" /> Spotlight
+                    </span>
+                  </div>
+                  
+                  <h2 className="text-2xl font-extrabold text-white uppercase tracking-wide">
+                    {activeMovie.title}
+                    {activeMovie.year && <span className="ml-2 text-lg text-white/50 font-normal">({activeMovie.year})</span>}
+                  </h2>
+
+                  {activeMovie.tagline && (
+                    <p className="text-[10px] font-semibold tracking-[0.15em] text-gold uppercase mt-1 mb-2">
+                      {activeMovie.tagline}
+                    </p>
+                  )}
+
+                  {activeMovie.overview && (
+                    <p className="text-xs text-zinc-300 leading-relaxed line-clamp-2 mb-3">
+                      {activeMovie.overview}
+                    </p>
+                  )}
+
+                  <div className="flex items-center gap-3">
+                    <Button
+                      onClick={() => handleSpotlightSimilar(activeMovie.title)}
+                      className="h-8 px-3 uppercase tracking-wider font-semibold shadow-lg hover:scale-105 transition-transform text-xs"
+                    >
+                      <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Find Similar
+                    </Button>
+                    <button
+                      onClick={() => {
+                        const active = getWatchlist().some((x) => x.title.toLowerCase() === activeMovie.title.toLowerCase());
+                        if (active) {
+                          removeFromWatchlist(activeMovie.title);
+                        } else {
+                          addToWatchlist({ title: activeMovie.title, poster_url: activeMovie.poster_url });
+                        }
+                      }}
+                      className="flex h-8 items-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-3 text-xs font-semibold text-white hover:bg-white/10 hover:border-white/35 transition-all hover:scale-105"
+                    >
+                      <Bookmark className="h-3.5 w-3.5 text-gold fill-none" /> Watchlist
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center items-center gap-2.5">
+              {activeSpotlightMovies.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSpotlightIdx(idx)}
+                  className={`h-2 rounded-full transition-all duration-500 ease-out shadow-sm ${
+                    idx === spotlightIdx ? "w-8 bg-gold shadow-[0_0_8px_rgba(245,158,11,0.6)]" : "w-2.5 bg-white/40 hover:bg-white/70"
+                  }`}
+                  aria-label={`Go to slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
         <div className="absolute top-0 left-0 right-0 z-20">
           <div className="film-sprocket-border opacity-55" />
         </div>
-
-        {/* Content Box */}
-        <div className="absolute inset-0 z-10 flex items-center">
-          <div className="mx-auto w-full max-w-6xl px-6 flex flex-col md:flex-row gap-8 items-center justify-between">
-            <div key={spotlightIdx} className="max-w-2xl space-y-4 md:space-y-5 text-left animate-fade-in-up">
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold tracking-wide uppercase">
-                  <Clapperboard className="h-3.5 w-3.5" /> Spotlight
-                </span>
-                <span className="text-xs text-muted-foreground font-semibold">CineMind Spotlight Series</span>
-              </div>
-              
-              <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl text-white title-glow-gold uppercase">
-                {activeMovie.title}
-                <span className="ml-3 text-2xl font-normal text-white/50 font-sans">({activeMovie.year})</span>
-              </h1>
-
-              <p className="text-xs sm:text-sm font-semibold tracking-[0.2em] text-gold uppercase">
-                {activeMovie.tagline}
-              </p>
-
-              <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed max-w-lg line-clamp-3">
-                {activeMovie.overview}
-              </p>
-
-              <div className="flex items-center gap-3 pt-2">
-                <Button
-                  onClick={() => handleSpotlightSimilar(activeMovie.title)}
-                  className="uppercase tracking-wider font-semibold shadow-lg hover:scale-105 transition-transform"
-                >
-                  <Sparkles className="h-4 w-4" /> Find Similar
-                </Button>
-                <button
-                  onClick={() => {
-                    const active = getWatchlist().some((x) => x.title.toLowerCase() === activeMovie.title.toLowerCase());
-                    if (active) {
-                      removeFromWatchlist(activeMovie.title);
-                    } else {
-                      addToWatchlist({ title: activeMovie.title, poster_url: activeMovie.poster });
-                    }
-                  }}
-                  className="flex items-center gap-2 rounded-md border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 hover:border-white/35 transition-all hover:scale-105"
-                >
-                  <Bookmark className="h-4 w-4 text-gold fill-none" /> Watchlist
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Pagination Dots */}
-        <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center items-center gap-2.5">
-          {SPOTLIGHT_MOVIES.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setSpotlightIdx(idx)}
-              className={`h-2 rounded-full transition-all duration-500 ease-out shadow-sm ${
-                idx === spotlightIdx ? "w-8 bg-gold shadow-[0_0_8px_rgba(245,158,11,0.6)]" : "w-2.5 bg-white/40 hover:bg-white/70"
-              }`}
-              aria-label={`Go to slide ${idx + 1}`}
-            />
-          ))}
-        </div>
-
-        {/* Sprocket Film Strip Decoration (Bottom) */}
         <div className="absolute bottom-0 left-0 right-0 z-20">
           <div className="film-sprocket-border opacity-55" />
         </div>
@@ -225,12 +261,10 @@ export default function Home() {
         </section>
 
         <footer className="mt-16 border-t border-border/60 pt-6 text-center text-xs text-muted-foreground">
-          Built with Next.js, shadcn/ui, and a Flask + scikit-learn / SciPy
-          backend.
+          Built with Next.js, shadcn/ui, and a Flask + scikit-learn / SciPy backend.
         </footer>
       </div>
 
-      {/* Floating Watchlist Toggle */}
       <button
         onClick={() => setWatchlistOpen(true)}
         className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full border border-gold/30 bg-black/80 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_20px_rgba(245,158,11,0.25)] backdrop-blur-md transition-all hover:scale-105 hover:border-gold/50 hover:bg-black"
@@ -244,7 +278,6 @@ export default function Home() {
         )}
       </button>
 
-      {/* Watchlist Drawer */}
       <WatchlistDrawer open={watchlistOpen} onClose={() => setWatchlistOpen(false)} />
     </main>
   );
