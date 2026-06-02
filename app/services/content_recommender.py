@@ -120,7 +120,13 @@ def search_titles(query, limit=10):
     seen = set()
     for original_title in data["original_title"]:
         name = str(original_title)
-        if query in name.lower():
+        match = re.match(r"^(.*?),\s*(the|a|an)(\s*\(\d{4}\))?$", name, flags=re.IGNORECASE)
+        if match:
+            clean_name = f"{match.group(2)} {match.group(1)}{match.group(3) or ''}".lower()
+        else:
+            clean_name = name.lower()
+            
+        if query in clean_name or query in name.lower():
             display = name.title()
             if display not in seen:
                 seen.add(display)

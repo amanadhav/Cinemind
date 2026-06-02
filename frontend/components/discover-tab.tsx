@@ -123,7 +123,7 @@ export function DiscoverTab({ initialQuery, onClearInitialQuery }: DiscoverTabPr
           </div>
 
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-white/10 bg-[#111] shadow-2xl backdrop-blur-xl">
+            <div className="absolute z-[60] mt-2 w-full overflow-hidden rounded-xl border border-white/10 bg-[#111] shadow-2xl backdrop-blur-xl">
               {suggestions.map((title, idx) => (
                 <button
                   key={title}

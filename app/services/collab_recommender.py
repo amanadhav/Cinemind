@@ -327,10 +327,17 @@ class _CollabModel:
         for mid, title in self.title_by_id.items():
             if mid not in self.movie_pos:
                 continue  # not in the model -> can't be folded in
+            
             name = str(title).lower()
-            if name.startswith(q):
+            match = re.match(r"^(.*?),\s*(the|a|an)(\s*\(\d{4}\))?$", name)
+            if match:
+                clean_name = f"{match.group(2)} {match.group(1)}{match.group(3) or ''}"
+            else:
+                clean_name = name
+                
+            if clean_name.startswith(q) or name.startswith(q):
                 starts.append(mid)
-            elif q in name:
+            elif q in clean_name or q in name:
                 contains.append(mid)
 
         def by_popularity(mid):
