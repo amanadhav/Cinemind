@@ -125,6 +125,11 @@ export function ForYouTab() {
     if (!known) {
       setExtraMovies((prev) => [movie, ...prev]);
     }
+    
+    // Smooth scroll to the movie card so user can see it was added
+    setTimeout(() => {
+      document.getElementById(`movie-${movie.movie_id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
   }
 
   // Submit the query (Enter or search icon): fetch the two-section explore
@@ -362,6 +367,37 @@ export function ForYouTab() {
         </p>
       </div>
 
+      {/* progress panel & taste profile side by side if there are ratings! */}
+      <div className="grid gap-6 md:grid-cols-3 items-stretch max-w-4xl mx-auto w-full mt-2 mb-12">
+        <div className="md:col-span-2 flex flex-col justify-center min-h-[140px] rounded-xl border border-white/10 bg-[#111] p-6 shadow-xl">
+          <button
+            onClick={submit}
+            disabled={!canSubmit || submitting}
+            className="w-full h-12 rounded-lg bg-[#8C8C8C] hover:bg-[#A0A0A0] disabled:opacity-50 disabled:hover:bg-[#8C8C8C] transition-colors text-xs font-bold text-[#1a1a1a] uppercase tracking-wider flex items-center justify-center gap-2 mb-4"
+          >
+            <Sparkles className="h-4 w-4" />
+            {submitting ? "Crunching..." : "Get My Recommendations"}
+          </button>
+          {/* Progress indicator below the button. */}
+          <div className="flex w-full items-center gap-4">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-white transition-all duration-300"
+                style={{
+                  width: `${Math.min(100, (ratedCount / MIN_RATINGS) * 100)}%`,
+                }}
+              />
+            </div>
+            <span className="text-xs tabular-nums text-white/50">
+              {ratedCount} / {MIN_RATINGS} rated
+            </span>
+          </div>
+        </div>
+        <div className="md:col-span-1 rounded-xl border border-white/10 bg-[#111] overflow-hidden flex flex-col">
+          <TasteProfile ratings={ratings} movies={ratingGrid} />
+        </div>
+      </div>
+
       {/* Search to add any movie, or hit Enter to explore matches + similar. */}
       <div className="mx-auto max-w-md">
         <div ref={searchBoxRef} className="relative">
@@ -404,37 +440,6 @@ export function ForYouTab() {
               ))}
             </div>
           )}
-        </div>
-      </div>
-
-      {/* progress panel & taste profile side by side if there are ratings! */}
-      <div className="grid gap-6 md:grid-cols-3 items-stretch max-w-4xl mx-auto w-full mt-10">
-        <div className="md:col-span-2 flex flex-col justify-center min-h-[140px] rounded-xl border border-white/10 bg-[#111] p-6 shadow-xl">
-          <button
-            onClick={submit}
-            disabled={!canSubmit || submitting}
-            className="w-full h-12 rounded-lg bg-[#8C8C8C] hover:bg-[#A0A0A0] disabled:opacity-50 disabled:hover:bg-[#8C8C8C] transition-colors text-xs font-bold text-[#1a1a1a] uppercase tracking-wider flex items-center justify-center gap-2 mb-4"
-          >
-            <Sparkles className="h-4 w-4" />
-            {submitting ? "Crunching..." : "Get My Recommendations"}
-          </button>
-          {/* Progress indicator below the button. */}
-          <div className="flex w-full items-center gap-4">
-            <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-white transition-all duration-300"
-                style={{
-                  width: `${Math.min(100, (ratedCount / MIN_RATINGS) * 100)}%`,
-                }}
-              />
-            </div>
-            <span className="text-xs tabular-nums text-white/50">
-              {ratedCount} / {MIN_RATINGS} rated
-            </span>
-          </div>
-        </div>
-        <div className="md:col-span-1 rounded-xl border border-white/10 bg-[#111] overflow-hidden flex flex-col">
-          <TasteProfile ratings={ratings} movies={ratingGrid} />
         </div>
       </div>
 
@@ -616,6 +621,7 @@ function RateGrid({
         return (
           <Card
             key={m.movie_id}
+            id={`movie-${m.movie_id}`}
             className={`overflow-hidden transition-all relative ${
               rated
                 ? "border-gold/70 shadow-[0_0_15px_-5px_rgba(245,158,11,0.5)]"

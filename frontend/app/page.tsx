@@ -225,7 +225,7 @@ export default function Home() {
 
             <div className="absolute inset-0 z-10">
               {activeMovie && (
-                <div key={spotlightIdx} className="absolute bottom-20 left-6 md:left-16 max-w-2xl animate-fade-in-up">
+                <div key={spotlightIdx} className="absolute bottom-28 md:bottom-40 left-6 md:left-16 max-w-2xl animate-fade-in-up pr-6">
                   {/* Top Pill Badge */}
                   <div className="mb-4 inline-flex items-center rounded-full border border-white/30 bg-black/40 px-3 py-1 backdrop-blur-md">
                     <span className="text-[10px] font-bold text-white uppercase tracking-wider">
@@ -308,7 +308,7 @@ export default function Home() {
             </div>
 
             {/* Centered Pagination Dots */}
-            <div className="absolute bottom-[100px] left-0 right-0 z-40 flex justify-center items-center gap-3">
+            <div className="absolute bottom-[80px] md:bottom-[120px] left-0 right-0 z-40 flex justify-center items-center gap-3">
               {activeSpotlightMovies.map((_, idx) => (
                 <button
                   key={idx}
@@ -330,7 +330,7 @@ export default function Home() {
       </header>
 
       {/* Main Content Area overlapping the Spotlight banner */}
-      <div className="mx-auto max-w-[1400px] px-6 pb-10 relative z-30 -mt-24">
+      <div className="mx-auto max-w-[1400px] px-6 pb-10 relative z-30 -mt-12 md:-mt-24">
         {activeTab === "for-you" && (
           <ErrorBoundary label="Home">
             <ForYouTab />
