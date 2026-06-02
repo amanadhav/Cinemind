@@ -421,8 +421,8 @@ export function ForYouTab() {
       </div>
 
       {/* progress panel & taste profile side by side if there are ratings! */}
-      <div className="grid gap-6 md:grid-cols-3 items-start max-w-4xl mx-auto w-full mt-10">
-        <div className="md:col-span-2 flex flex-col justify-center h-[140px] rounded-xl border border-white/10 bg-[#111] p-6 shadow-xl">
+      <div className="grid gap-6 md:grid-cols-3 items-stretch max-w-4xl mx-auto w-full mt-10">
+        <div className="md:col-span-2 flex flex-col justify-center min-h-[140px] rounded-xl border border-white/10 bg-[#111] p-6 shadow-xl">
           <button
             onClick={submit}
             disabled={!canSubmit || submitting}
@@ -446,7 +446,7 @@ export function ForYouTab() {
             </span>
           </div>
         </div>
-        <div className="md:col-span-1 h-[140px] rounded-xl border border-white/10 bg-[#111] overflow-hidden flex flex-col">
+        <div className="md:col-span-1 rounded-xl border border-white/10 bg-[#111] overflow-hidden flex flex-col">
           <TasteProfile ratings={ratings} movies={ratingGrid} />
         </div>
       </div>
