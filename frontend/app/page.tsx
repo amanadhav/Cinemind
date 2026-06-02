@@ -247,30 +247,30 @@ export default function Home() {
                       <Bookmark className={`h-4 w-4 ${getWatchlist().some((x) => x.title.toLowerCase() === activeMovie.title.toLowerCase()) ? "fill-white text-white" : "text-white"}`} />
                     </button>
                   </div>
+                  
+                  {/* Apple Style Pagination Dots */}
+                  <div className="flex items-center gap-3 pt-8">
+                    {activeSpotlightMovies.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setSpotlightIdx(idx)}
+                        className="relative flex items-center justify-center w-4 h-4"
+                        aria-label={`Go to slide ${idx + 1}`}
+                      >
+                        {/* The dot itself */}
+                        <span className={`rounded-full transition-all duration-300 ${
+                          idx === spotlightIdx ? "w-1.5 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/40 hover:bg-white/70"
+                        }`} />
+                        
+                        {/* The active ring */}
+                        {idx === spotlightIdx && (
+                          <span className="absolute inset-0 rounded-full border-[1.5px] border-[#2997ff] scale-125" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
-            </div>
-
-            {/* Apple Style Pagination Dots */}
-            <div className="absolute bottom-[120px] left-0 right-0 z-20 flex justify-center items-center gap-3">
-              {activeSpotlightMovies.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSpotlightIdx(idx)}
-                  className="relative flex items-center justify-center w-4 h-4"
-                  aria-label={`Go to slide ${idx + 1}`}
-                >
-                  {/* The dot itself */}
-                  <span className={`rounded-full transition-all duration-300 ${
-                    idx === spotlightIdx ? "w-1.5 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/40 hover:bg-white/70"
-                  }`} />
-                  
-                  {/* The active ring */}
-                  {idx === spotlightIdx && (
-                    <span className="absolute inset-0 rounded-full border-[1.5px] border-[#2997ff] scale-125" />
-                  )}
-                </button>
-              ))}
             </div>
           </>
         )}
