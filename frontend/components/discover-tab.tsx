@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 
 import { api, ApiError, MovieCard } from "@/lib/api";
 import { Button } from "@/components/ui/button";
