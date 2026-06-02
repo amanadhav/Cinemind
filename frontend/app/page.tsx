@@ -115,10 +115,10 @@ export default function Home() {
       <div className="absolute left-[15%] top-[10%] h-[400px] w-[400px] bg-gold/5 bg-glow-sphere animate-pulse-slow" />
       <div className="absolute right-[5%] top-[25%] h-[500px] w-[500px] bg-rose-500/5 bg-glow-sphere animate-pulse-slow-reverse" />
 
-      <header className="relative w-full h-[520px] bg-zinc-950 overflow-hidden border-b border-border/40">
+      <header className="relative w-full h-[70vh] min-h-[600px] max-h-[800px] bg-zinc-950 overflow-hidden">
         {loadingSpotlight ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-gold" />
+            <Loader2 className="w-8 h-8 animate-spin text-white/50" />
           </div>
         ) : (
           <>
@@ -134,7 +134,7 @@ export default function Home() {
                   <img
                     src={movie.backdrop_url}
                     alt={movie.title}
-                    className="w-full h-full object-cover object-center scale-105"
+                    className="w-full h-full object-cover object-center"
                   />
                 ) : (
                   <div className="w-full h-full bg-zinc-900" />
@@ -142,52 +142,53 @@ export default function Home() {
               </div>
             ))}
 
-            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-black/40 to-black/20" />
+            {/* Seamless Apple TV style gradients */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent w-full md:w-3/4" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent h-full" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent h-full opacity-60" />
 
-            <div className="absolute inset-0 z-10 flex flex-col justify-center items-center">
-              
-              <div className="text-center animate-fade-in-up mt-[-60px]">
-                <p className="text-gold uppercase font-bold tracking-[0.5em] text-sm mb-2 opacity-80">
-                  Welcome to
-                </p>
-                <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-white/90 to-white/20 title-glow-gold drop-shadow-2xl">
-                  CINEMIND
-                </h1>
-              </div>
-
+            <div className="absolute inset-0 z-10">
               {activeMovie && (
-                <div key={spotlightIdx} className="absolute bottom-12 left-6 md:left-12 max-w-xl glass-panel p-5 rounded-2xl animate-fade-in-up bg-black/60 border border-white/10 shadow-2xl backdrop-blur-md">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold tracking-widest uppercase shadow-[0_0_10px_rgba(245,158,11,0.3)]">
-                      <Clapperboard className="h-3 w-3" /> Spotlight
+                <div key={spotlightIdx} className="absolute bottom-20 left-6 md:left-16 max-w-2xl animate-fade-in-up">
+                  {/* Top Pill Badge */}
+                  <div className="mb-4 inline-flex items-center rounded-full border border-white/30 bg-black/40 px-3 py-1 backdrop-blur-md">
+                    <span className="text-[10px] font-bold text-white uppercase tracking-wider">
+                      CineMind Showcase
                     </span>
                   </div>
                   
-                  <h2 className="text-2xl font-extrabold text-white uppercase tracking-wide">
+                  {/* Massive Wide Title */}
+                  <h2 className="text-5xl md:text-7xl font-black text-white uppercase tracking-[0.15em] mb-3 drop-shadow-lg">
                     {activeMovie.title}
-                    {activeMovie.year && <span className="ml-2 text-lg text-white/50 font-normal">({activeMovie.year})</span>}
                   </h2>
 
-                  {activeMovie.tagline && (
-                    <p className="text-[10px] font-semibold tracking-[0.15em] text-gold uppercase mt-1 mb-2">
-                      {activeMovie.tagline}
-                    </p>
-                  )}
+                  {/* Metadata Line */}
+                  <div className="flex items-center gap-2 text-xs md:text-sm font-semibold text-white/90 mb-4 drop-shadow-md">
+                    {activeMovie.year && <span>{activeMovie.year}</span>}
+                    {activeMovie.year && activeMovie.genres?.length > 0 && <span>&middot;</span>}
+                    {activeMovie.genres?.length > 0 && (
+                      <span>{activeMovie.genres.slice(0, 3).join(" \u00B7 ")}</span>
+                    )}
+                  </div>
 
+                  {/* Description */}
                   {activeMovie.overview && (
-                    <p className="text-xs text-zinc-300 leading-relaxed line-clamp-2 mb-3">
+                    <p className="text-sm md:text-base text-zinc-300 leading-relaxed line-clamp-2 max-w-xl mb-8 drop-shadow-md font-medium">
                       {activeMovie.overview}
                     </p>
                   )}
 
-                  <div className="flex items-center gap-3">
-                    <Button
+                  {/* Apple Style Buttons */}
+                  <div className="flex items-center gap-4">
+                    {/* Primary Play/Action Button */}
+                    <button
                       onClick={() => handleSpotlightSimilar(activeMovie.title)}
-                      className="h-8 px-3 uppercase tracking-wider font-semibold shadow-lg hover:scale-105 transition-transform text-xs"
+                      className="flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-bold text-black hover:bg-white/90 hover:scale-105 transition-all shadow-xl"
                     >
-                      <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Find Similar
-                    </Button>
+                      <Sparkles className="h-4 w-4 fill-black" /> Find Similar
+                    </button>
+                    
+                    {/* Secondary Watchlist Circular Button */}
                     <button
                       onClick={() => {
                         const active = getWatchlist().some((x) => x.title.toLowerCase() === activeMovie.title.toLowerCase());
@@ -197,36 +198,39 @@ export default function Home() {
                           addToWatchlist({ title: activeMovie.title, poster_url: activeMovie.poster_url });
                         }
                       }}
-                      className="flex h-8 items-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-3 text-xs font-semibold text-white hover:bg-white/10 hover:border-white/35 transition-all hover:scale-105"
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white backdrop-blur-md hover:bg-white/20 hover:scale-105 transition-all shadow-xl"
+                      title="Toggle Watchlist"
                     >
-                      <Bookmark className="h-3.5 w-3.5 text-gold fill-none" /> Watchlist
+                      <Bookmark className={`h-4 w-4 ${getWatchlist().some((x) => x.title.toLowerCase() === activeMovie.title.toLowerCase()) ? "fill-white text-white" : "text-white"}`} />
                     </button>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center items-center gap-2.5">
+            {/* Apple Style Pagination Dots */}
+            <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center items-center gap-3">
               {activeSpotlightMovies.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setSpotlightIdx(idx)}
-                  className={`h-2 rounded-full transition-all duration-500 ease-out shadow-sm ${
-                    idx === spotlightIdx ? "w-8 bg-gold shadow-[0_0_8px_rgba(245,158,11,0.6)]" : "w-2.5 bg-white/40 hover:bg-white/70"
-                  }`}
+                  className="relative flex items-center justify-center w-4 h-4"
                   aria-label={`Go to slide ${idx + 1}`}
-                />
+                >
+                  {/* The dot itself */}
+                  <span className={`rounded-full transition-all duration-300 ${
+                    idx === spotlightIdx ? "w-1.5 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/40 hover:bg-white/70"
+                  }`} />
+                  
+                  {/* The active ring */}
+                  {idx === spotlightIdx && (
+                    <span className="absolute inset-0 rounded-full border-[1.5px] border-[#2997ff] scale-125" />
+                  )}
+                </button>
               ))}
             </div>
           </>
         )}
-
-        <div className="absolute top-0 left-0 right-0 z-20">
-          <div className="film-sprocket-border opacity-55" />
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 z-20">
-          <div className="film-sprocket-border opacity-55" />
-        </div>
       </header>
 
       <div className="mx-auto max-w-6xl px-4 py-10">
