@@ -59,7 +59,7 @@ export default function Home() {
   useEffect(() => {
     const timer = setInterval(() => {
       setSpotlightIdx((prev) => (prev + 1) % SPOTLIGHT_MOVIES.length);
-    }, 10000);
+    }, 5000);
     return () => clearInterval(timer);
   }, []);
 
@@ -107,7 +107,7 @@ export default function Home() {
         {/* Content Box */}
         <div className="absolute inset-0 z-10 flex items-center">
           <div className="mx-auto w-full max-w-6xl px-6 flex flex-col md:flex-row gap-8 items-center justify-between">
-            <div className="max-w-2xl space-y-4 md:space-y-5 text-left animate-fade-in-up">
+            <div key={spotlightIdx} className="max-w-2xl space-y-4 md:space-y-5 text-left animate-fade-in-up">
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold tracking-wide uppercase">
                   <Clapperboard className="h-3.5 w-3.5" /> Spotlight
@@ -150,21 +150,21 @@ export default function Home() {
                 </button>
               </div>
             </div>
-
-            {/* Showcase Poster */}
-            <div className="hidden md:block w-48 aspect-[2/3] shrink-0 overflow-hidden rounded-xl border border-white/10 shadow-2xl animate-fade-in-up">
-              {SPOTLIGHT_MOVIES.map((movie, idx) => (
-                <div
-                  key={movie.title + "-poster"}
-                  className={`w-full h-full transition-opacity duration-1000 ease-in-out ${
-                    idx === spotlightIdx ? "block" : "hidden"
-                  }`}
-                >
-                  <MoviePoster src={movie.poster} alt={movie.title} className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </div>
           </div>
+        </div>
+
+        {/* Pagination Dots */}
+        <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center items-center gap-2.5">
+          {SPOTLIGHT_MOVIES.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setSpotlightIdx(idx)}
+              className={`h-2 rounded-full transition-all duration-500 ease-out shadow-sm ${
+                idx === spotlightIdx ? "w-8 bg-gold shadow-[0_0_8px_rgba(245,158,11,0.6)]" : "w-2.5 bg-white/40 hover:bg-white/70"
+              }`}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
         </div>
 
         {/* Sprocket Film Strip Decoration (Bottom) */}
