@@ -82,6 +82,36 @@ export interface HybridResult {
   source: "content" | "collaborative" | "both";
 }
 
+export function formatTitle(title: string): string {
+  // Matches "Title, The" or "Title, A" or "Title, An" optionally followed by " (Year)"
+  const match = title.match(/^(.*?),\s*(The|A|An)(\s*\(\d{4}\))?$/i);
+  if (match) {
+    const [, mainTitle, article, year] = match;
+    return `${article} ${mainTitle}${year || ""}`;
+  }
+  return title;
+}
+
+function formatTitlesInResponse(data: any): any {
+  if (Array.isArray(data)) {
+    return data.map(formatTitlesInResponse);
+  }
+  if (data !== null && typeof data === "object") {
+    const newData = { ...data };
+    if (typeof newData.title === "string") {
+      newData.title = formatTitle(newData.title);
+    }
+    for (const key in newData) {
+      newData[key] = formatTitlesInResponse(newData[key]);
+    }
+    return newData;
+  }
+  if (typeof data === "string") {
+    return formatTitle(data);
+  }
+  return data;
+}
+
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetchWithTimeout(`${API_URL}${path}`, {
     method: "POST",
@@ -92,7 +122,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     const err = await res.json().catch(() => ({}));
     throw new ApiError(err.error || `Request failed (${res.status})`);
   }
-  return res.json();
+  const data = await res.json();
+  return formatTitlesInResponse(data) as T;
 }
 
 async function get<T>(path: string): Promise<T> {
@@ -101,7 +132,8 @@ async function get<T>(path: string): Promise<T> {
     const err = await res.json().catch(() => ({}));
     throw new ApiError(err.error || `Request failed (${res.status})`);
   }
-  return res.json();
+  const data = await res.json();
+  return formatTitlesInResponse(data) as T;
 }
 
 export const api = {

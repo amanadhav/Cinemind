@@ -354,7 +354,7 @@ export function ForYouTab() {
     <div className="space-y-6">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold tracking-tight text-white mb-4">
-          Tell us what you've seen
+          Tell us what you&apos;ve seen
         </h2>
         
         {/* Apple Style Dot/Star Separator */}
@@ -371,7 +371,7 @@ export function ForYouTab() {
         </div>
 
         <p className="mt-6 text-sm text-zinc-400 max-w-lg mx-auto">
-          Rate at least {MIN_RATINGS} movies and we'll build your taste profile. Search to add any title, or rate the popular ones below.
+          Rate at least {MIN_RATINGS} movies and we&apos;ll build your taste profile. Search to add any title, or rate the popular ones below.
         </p>
       </div>
 

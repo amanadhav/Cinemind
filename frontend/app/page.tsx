@@ -126,19 +126,19 @@ export default function Home() {
             onClick={() => setActiveTab("for-you")} 
             className={`transition-colors ${activeTab === "for-you" ? "text-white" : "text-white/60 hover:text-white"}`}
           >
-            Home
+            For You
           </button>
           <button 
             onClick={() => setActiveTab("discover")} 
             className={`transition-colors ${activeTab === "discover" ? "text-white" : "text-white/60 hover:text-white"}`}
           >
-            Movies
+            Discover
           </button>
           <button 
             onClick={() => setActiveTab("mix-it")} 
             className={`transition-colors ${activeTab === "mix-it" ? "text-white" : "text-white/60 hover:text-white"}`}
           >
-            Series
+            Hybrid
           </button>
         </div>
 
