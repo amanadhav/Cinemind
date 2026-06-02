@@ -523,8 +523,7 @@ export function ForYouTab() {
           </div>
           
           <div className="relative group">
-            {/* Film sprocket top border */}
-            <div className="film-sprocket-border opacity-40 mb-3" />
+            {/* Film sprocket top border removed */}
             
             {/* Scroll Container */}
             <div 
@@ -568,8 +567,7 @@ export function ForYouTab() {
               })}
             </div>
             
-            {/* Film sprocket bottom border */}
-            <div className="film-sprocket-border opacity-40 mt-1" />
+            {/* Film sprocket bottom border removed */}
             
             {/* Left Button */}
             <button

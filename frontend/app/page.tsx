@@ -113,7 +113,7 @@ export default function Home() {
   return (
     <main className="relative min-h-screen overflow-hidden pb-16">
       <div className="absolute left-[15%] top-[10%] h-[400px] w-[400px] bg-gold/5 bg-glow-sphere animate-pulse-slow" />
-      <div className="absolute right-[5%] top-[25%] h-[500px] w-[500px] bg-rose-500/5 bg-glow-sphere animate-pulse-slow-reverse" />
+      <div className="absolute right-[5%] top-[25%] h-[500px] w-[500px] bg-white/5 bg-glow-sphere animate-pulse-slow-reverse" />
 
       <header className="relative w-full h-[70vh] min-h-[600px] max-h-[800px] bg-zinc-950 overflow-hidden">
         {loadingSpotlight ? (

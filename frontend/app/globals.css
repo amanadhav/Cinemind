@@ -10,7 +10,7 @@
     --card: 0 0% 7%; /* #111111 */
     --card-foreground: 0 0% 98%;
     /* Warm amber/gold accent. */
-    --primary: 38 92% 50%; /* #f59e0b */
+    --primary: 0 0% 100%; /* #ffffff */
     --primary-foreground: 0 0% 4%;
     --secondary: 0 0% 12%;
     --secondary-foreground: 0 0% 98%;
@@ -22,7 +22,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 15%;
     --input: 0 0% 18%;
-    --ring: 38 92% 50%; /* amber focus ring */
+    --ring: 0 0% 100%; /* white focus ring */
     --radius: 0.5rem;
   }
 }
@@ -53,9 +53,9 @@
     min-height: 100vh;
   }
 
-  /* Amber text selection. */
+  /* Monochrome text selection. */
   ::selection {
-    background: #f59e0b;
+    background: #ffffff;
     color: #0a0a0a;
   }
 
@@ -64,7 +64,7 @@
     outline: none;
   }
 
-  /* Thin dark scrollbar with amber thumb (WebKit). */
+  /* Thin dark scrollbar with monochrome thumb (WebKit). */
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -73,17 +73,17 @@
     background: #0a0a0a;
   }
   ::-webkit-scrollbar-thumb {
-    background: #b45309;
+    background: #525252;
     border-radius: 9999px;
     border: 2px solid #0a0a0a;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #f59e0b;
+    background: #ffffff;
   }
   /* Firefox */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #b45309 #0a0a0a;
+    scrollbar-color: #525252 #0a0a0a;
   }
 }
 
@@ -127,7 +127,7 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(245, 158, 11, 0.06),
+      rgba(255, 255, 255, 0.06),
       transparent
     );
     animation: shimmer 1.6s infinite;
@@ -160,43 +160,20 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .glass-panel-hover:hover {
-    border-color: rgba(245, 158, 11, 0.2);
-    box-shadow: 0 0 30px -10px rgba(245, 158, 11, 0.15);
-  }
-
-  /* 35mm Film strip border repeating sprocket holes style */
-  .film-sprocket-border {
-    position: relative;
-    height: 18px;
-    background-color: #0e0e0e;
-    border-top: 1px solid #1f1f1f;
-    border-bottom: 1px solid #1f1f1f;
-    overflow: hidden;
-    width: 100%;
-  }
-  .film-sprocket-border::before {
-    content: "";
-    position: absolute;
-    inset: 4px 0;
-    background-image: repeating-linear-gradient(
-      90deg,
-      #27272a,
-      #27272a 8px,
-      transparent 8px,
-      transparent 18px
-    );
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 30px -10px rgba(255, 255, 255, 0.15);
   }
 
   /* Glowing star ratings */
   .star-glow-active {
-    filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.8));
-    color: #f59e0b;
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
+    color: #ffffff;
     transition: all 0.2s ease;
   }
   
   /* Text glow for cinematic titles */
   .title-glow-gold {
-    text-shadow: 0 0 20px rgba(245, 158, 11, 0.45), 0 0 2px rgba(245, 158, 11, 0.8);
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.45), 0 0 2px rgba(255, 255, 255, 0.8);
   }
 }
 
