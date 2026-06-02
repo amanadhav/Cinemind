@@ -83,13 +83,14 @@ export function ForYouTab() {
     loadSeed();
   }, []);
 
-  // Debounced movie search to add titles beyond the popular seed grid.
+  // Autocomplete debouncer
   useEffect(() => {
-    if (query.trim().length < 2) {
+    if (!query.trim()) {
       setSuggestions([]);
       return;
     }
     const t = setTimeout(async () => {
+      if (exploring || (explore && explore.query === query.trim())) return;
       try {
         const found = await api.searchMovies(query.trim(), 8);
         setSuggestions(found);
@@ -99,7 +100,7 @@ export function ForYouTab() {
       }
     }, 200);
     return () => clearTimeout(t);
-  }, [query]);
+  }, [query, exploring, explore]);
 
   // Close the suggestions dropdown on outside click.
   useEffect(() => {
