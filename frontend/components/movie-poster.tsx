@@ -24,14 +24,18 @@ export function MoviePoster({ src, alt, className }: MoviePosterProps) {
     );
   }
 
-  // eslint-disable-next-line @next/next/no-img-element
   return (
-    <img
-      src={src}
-      alt={alt}
-      loading="lazy"
-      onError={() => setErrored(true)}
-      className={className}
-    />
+    <div className={`relative overflow-hidden ${className ?? ""}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        onError={() => setErrored(true)}
+        className="h-full w-full object-cover"
+      />
+      {/* Subtle film frame border overlay: inner glare/reflection + thin dark boundary */}
+      <div className="pointer-events-none absolute inset-0 border border-black/30 ring-1 ring-inset ring-white/15" />
+    </div>
   );
 }

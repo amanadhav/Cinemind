@@ -75,7 +75,7 @@ def _fetch_poster_url(title):
     """Perform the actual TMDB lookup for ``title`` (uncached)."""
     api_key = os.environ.get("TMDB_API_KEY")
     if not api_key:
-        return PLACEHOLDER_POSTER_URL
+        return placeholder_for(title)
 
     params = {"api_key": api_key, "query": _clean_title(title)}
     try:
@@ -85,14 +85,14 @@ def _fetch_poster_url(title):
         response.raise_for_status()
         results = response.json().get("results", [])
     except (requests.RequestException, ValueError):
-        return PLACEHOLDER_POSTER_URL
+        return placeholder_for(title)
 
     if results:
         poster_path = results[0].get("poster_path")
         if poster_path:
             return f"{TMDB_IMAGE_BASE_URL}{poster_path}"
 
-    return PLACEHOLDER_POSTER_URL
+    return placeholder_for(title)
 
 
 def clear_cache():

@@ -19,12 +19,6 @@ logger = logging.getLogger(__name__)
 recommend_bp = Blueprint("recommend", __name__)
 
 
-def _normalize_title(title):
-    """Normalize a title for cross-source dedup (lowercase, drop year, alnum)."""
-    text = re.sub(r"\s*\(\d{4}\)\s*$", "", str(title)).lower()
-    return re.sub(r"[^a-z0-9]", "", text)
-
-
 @recommend_bp.route("/api/recommend/content", methods=["POST"])
 def api_recommend_content():
     """JSON content-based recommendations.
@@ -93,7 +87,7 @@ def api_recommend_hybrid():
     title_by_key = {}
 
     def register(title, source):
-        key = _normalize_title(title)
+        key = collab.normalize_title(title)
         if not key:
             return
         sources_by_key.setdefault(key, set()).add(source)
@@ -108,7 +102,7 @@ def api_recommend_hybrid():
     emitted = set()
 
     def emit(title):
-        key = _normalize_title(title)
+        key = collab.normalize_title(title)
         if key and key not in emitted:
             emitted.add(key)
             ordered_keys.append(key)

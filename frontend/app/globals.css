@@ -4,24 +4,26 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
+    /* Deep cinema black base. */
+    --background: 0 0% 4%; /* #0a0a0a */
     --foreground: 0 0% 98%;
-    --card: 240 6% 10%;
+    --card: 0 0% 7%; /* #111111 */
     --card-foreground: 0 0% 98%;
-    --primary: 142 71% 45%;
-    --primary-foreground: 144 80% 10%;
-    --secondary: 240 4% 16%;
+    /* Warm amber/gold accent. */
+    --primary: 38 92% 50%; /* #f59e0b */
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 12%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%;
-    --accent: 240 4% 16%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 14%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 142 71% 45%;
-    --radius: 0.6rem;
+    --border: 0 0% 15%;
+    --input: 0 0% 18%;
+    --ring: 38 92% 50%; /* amber focus ring */
+    --radius: 0.5rem;
   }
 }
 
@@ -29,7 +31,172 @@
   * {
     @apply border-border;
   }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-plus-jakarta), var(--font-inter), system-ui, sans-serif;
+  }
+
   body {
     @apply bg-background text-foreground;
+    /* Subtle radial gradient for depth: lighter center, pure black edges. */
+    background-image: radial-gradient(
+      ellipse at center,
+      #0f0f0f 0%,
+      #0a0a0a 60%,
+      #050505 100%
+    );
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* Amber text selection. */
+  ::selection {
+    background: #f59e0b;
+    color: #0a0a0a;
+  }
+
+  /* Amber focus rings everywhere (replace default). */
+  :focus-visible {
+    outline: none;
+  }
+
+  /* Thin dark scrollbar with amber thumb (WebKit). */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0a0a0a;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #b45309;
+    border-radius: 9999px;
+    border: 2px solid #0a0a0a;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #f59e0b;
+  }
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #b45309 #0a0a0a;
   }
 }
+
+@layer components {
+  /* Film grain overlay applied to the whole page via a fixed pseudo-element.
+     Uses an inline SVG turbulence filter — no external image. */
+  .film-grain::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Hero film-grain texture (slightly stronger, scoped to the banner). */
+  .hero-grain {
+    position: relative;
+  }
+  .hero-grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.06;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='h'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23h)'/%3E%3C/svg%3E");
+  }
+
+  /* Dark charcoal shimmer for skeletons (overrides the gray pulse). */
+  .shimmer-dark {
+    position: relative;
+    overflow: hidden;
+    background: #141414;
+  }
+  .shimmer-dark::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(245, 158, 11, 0.06),
+      transparent
+    );
+    animation: shimmer 1.6s infinite;
+  }
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Glowing background blobs */
+  .bg-glow-sphere {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    mix-blend-mode: plus-lighter;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Custom glassmorphic cards and containers */
+  .glass-panel {
+    background: rgba(17, 17, 17, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .glass-panel-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .glass-panel-hover:hover {
+    border-color: rgba(245, 158, 11, 0.2);
+    box-shadow: 0 0 30px -10px rgba(245, 158, 11, 0.15);
+  }
+
+  /* 35mm Film strip border repeating sprocket holes style */
+  .film-sprocket-border {
+    position: relative;
+    height: 18px;
+    background-color: #0e0e0e;
+    border-top: 1px solid #1f1f1f;
+    border-bottom: 1px solid #1f1f1f;
+    overflow: hidden;
+    width: 100%;
+  }
+  .film-sprocket-border::before {
+    content: "";
+    position: absolute;
+    inset: 4px 0;
+    background-image: repeating-linear-gradient(
+      90deg,
+      #27272a,
+      #27272a 8px,
+      transparent 8px,
+      transparent 18px
+    );
+  }
+
+  /* Glowing star ratings */
+  .star-glow-active {
+    filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.8));
+    color: #f59e0b;
+    transition: all 0.2s ease;
+  }
+  
+  /* Text glow for cinematic titles */
+  .title-glow-gold {
+    text-shadow: 0 0 20px rgba(245, 158, 11, 0.45), 0 0 2px rgba(245, 158, 11, 0.8);
+  }
+}
+

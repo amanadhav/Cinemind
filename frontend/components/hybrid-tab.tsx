@@ -5,20 +5,20 @@ import { Search, Blend } from "lucide-react";
 
 import { api, ApiError, HybridResult, PopularMovie, UserRating } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoviePoster } from "@/components/movie-poster";
 import { StarRating } from "@/components/star-rating";
 import { MovieDetailDialog } from "@/components/movie-detail-dialog";
 import { ErrorState } from "@/components/error-state";
+import { WatchlistButton } from "@/components/watchlist-button";
 
 const MIN_RATINGS = 3;
 
 const SOURCE_STYLES: Record<HybridResult["source"], string> = {
-  content: "bg-blue-600 text-white",
-  collaborative: "bg-green-600 text-white",
-  both: "bg-purple-600 text-white",
+  content: "bg-sky-500/90 text-white",
+  collaborative: "bg-emerald-500/90 text-white",
+  both: "bg-gold text-black",
 };
 
 const SOURCE_LABELS: Record<HybridResult["source"], string> = {
@@ -47,6 +47,7 @@ export function HybridTab() {
   const [errorTimeout, setErrorTimeout] = useState(false);
   const [detailTitle, setDetailTitle] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [sourceFilter, setSourceFilter] = useState("All");
 
   useEffect(() => {
     api
@@ -114,7 +115,7 @@ export function HybridTab() {
           </h3>
           <div ref={boxRef} className="relative">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gold" />
               <Input
                 value={query}
                 onChange={(e) => {
@@ -127,16 +128,17 @@ export function HybridTab() {
               />
             </div>
             {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border bg-card shadow-lg">
+              <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-border bg-[#111] shadow-lg">
                 {suggestions.map((title) => (
                   <button
                     key={title}
-                    onClick={() => {
+                    onMouseDown={(e) => {
+                      e.preventDefault();
                       setSelectedMovie(title);
                       setQuery(title);
                       setShowSuggestions(false);
                     }}
-                    className="block w-full px-4 py-2 text-left text-sm hover:bg-accent"
+                    className="block w-full border-l-2 border-transparent px-4 py-2.5 text-left text-sm transition-colors hover:border-gold hover:bg-accent"
                   >
                     {title}
                   </button>
@@ -145,7 +147,7 @@ export function HybridTab() {
             )}
           </div>
           {selectedMovie && (
-            <p className="mt-2 text-sm text-primary">Selected: {selectedMovie}</p>
+            <p className="mt-2 text-sm text-gold">Selected: {selectedMovie}</p>
           )}
         </div>
 
@@ -187,7 +189,12 @@ export function HybridTab() {
       </div>
 
       <div className="flex justify-center">
-        <Button onClick={submit} disabled={!canSubmit || submitting} size="lg">
+        <Button
+          onClick={submit}
+          disabled={!canSubmit || submitting}
+          size="lg"
+          className="uppercase tracking-wider"
+        >
           <Blend className="h-4 w-4" />
           {submitting ? "Blending..." : "Get Hybrid Recommendations"}
         </Button>
@@ -201,49 +208,82 @@ export function HybridTab() {
         />
       )}
 
-      {results && results.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-blue-600" /> Content
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-green-600" /> Collaborative
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-purple-600" /> Both
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {results.map((m) => (
-              <Card
-                key={m.title}
-                onClick={() => {
-                  setDetailTitle(m.title);
-                  setDetailOpen(true);
-                }}
-                className="cursor-pointer overflow-hidden transition-transform hover:scale-[1.03]"
-              >
-                <div className="relative aspect-[2/3]">
-                  <MoviePoster
-                    src={m.poster_url}
-                    alt={m.title}
-                    className="h-full w-full object-cover"
-                  />
-                  <span
-                    className={`absolute left-2 top-2 rounded px-2 py-0.5 text-[10px] font-semibold ${SOURCE_STYLES[m.source]}`}
+      {results && results.length > 0 && (() => {
+        const filteredResults = results.filter(
+          (m) => sourceFilter === "All" || m.source === sourceFilter.toLowerCase()
+        );
+        return (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-center gap-2 border-b border-border/40 pb-4">
+              <span className="text-xs text-muted-foreground mr-2 font-display uppercase tracking-wider">Filter Source:</span>
+              {(["All", "Content", "Collaborative", "Both"] as const).map((src) => {
+                const colors: Record<string, string> = {
+                  All: "bg-secondary text-zinc-400 hover:text-white",
+                  Content: "bg-sky-500/10 text-sky-400 border border-sky-500/20",
+                  Collaborative: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+                  Both: "bg-gold/10 text-gold border border-gold/25",
+                };
+                const activeColors: Record<string, string> = {
+                  All: "bg-zinc-700 text-white shadow",
+                  Content: "bg-sky-500 text-white shadow",
+                  Collaborative: "bg-emerald-500 text-white shadow",
+                  Both: "bg-gold text-black shadow",
+                };
+                
+                const active = sourceFilter === src;
+                return (
+                  <button
+                    key={src}
+                    onClick={() => setSourceFilter(src)}
+                    className={`rounded-full px-3.5 py-1 text-xs font-semibold transition-all ${
+                      active ? activeColors[src] : colors[src]
+                    }`}
                   >
-                    {SOURCE_LABELS[m.source]}
-                  </span>
-                </div>
-                <CardContent className="p-3">
-                  <p className="line-clamp-2 text-sm font-medium">{m.title}</p>
-                </CardContent>
-              </Card>
-            ))}
+                    {src}
+                  </button>
+                );
+              })}
+            </div>
+            
+            {filteredResults.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-10">
+                No hybrid recommendations match the selected filter.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {filteredResults.map((m, i) => (
+                  <div
+                    key={m.title}
+                    onClick={() => {
+                      setDetailTitle(m.title);
+                      setDetailOpen(true);
+                    }}
+                    style={{ animationDelay: `${i * 50}ms` }}
+                    className="group relative aspect-[2/3] animate-fade-in-up cursor-pointer overflow-hidden rounded-lg border border-border/60 bg-card transition-all duration-300 hover:scale-105 hover:border-gold/50 hover:shadow-[0_0_25px_-4px_rgba(245,158,11,0.45)]"
+                  >
+                    <WatchlistButton title={m.title} posterUrl={m.poster_url} />
+                    <MoviePoster
+                      src={m.poster_url}
+                      alt={m.title}
+                      className="h-full w-full object-cover"
+                    />
+                    <span
+                      className={`absolute left-2 top-2 z-10 rounded px-2 py-0.5 text-[10px] font-semibold ${SOURCE_STYLES[m.source]}`}
+                    >
+                      {SOURCE_LABELS[m.source]}
+                    </span>
+                    <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/30 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <p className="line-clamp-3 text-sm font-medium text-white">
+                        {m.title}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       <MovieDetailDialog
         title={detailTitle}

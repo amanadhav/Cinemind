@@ -30,10 +30,10 @@ export function StarRating({ value, onChange }: StarRatingProps) {
         >
           <Star
             className={cn(
-              "h-5 w-5 transition-colors",
+              "h-5 w-5 transition-all duration-200",
               star <= active
-                ? "fill-yellow-400 text-yellow-400"
-                : "text-zinc-600"
+                ? "fill-gold star-glow-active"
+                : "text-zinc-700 hover:text-zinc-500"
             )}
           />
         </button>

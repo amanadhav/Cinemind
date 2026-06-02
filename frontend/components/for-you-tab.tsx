@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, RotateCcw, Search } from "lucide-react";
+import { Sparkles, RotateCcw, Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { api, ApiError, PopularMovie, Recommendation, UserRating } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import { MoviePoster } from "@/components/movie-poster";
 import { StarRating } from "@/components/star-rating";
 import { MovieDetailDialog } from "@/components/movie-detail-dialog";
 import { ErrorState } from "@/components/error-state";
+import { TasteProfile } from "@/components/taste-profile";
+import { WatchlistButton } from "@/components/watchlist-button";
 
 const MIN_RATINGS = 5;
 
@@ -32,12 +34,26 @@ export function ForYouTab() {
   );
   const [detailId, setDetailId] = useState<number | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [genreFilter, setGenreFilter] = useState("All");
+  const [sortBy, setSortBy] = useState("relevance");
 
   // Search-to-add state for the rating screen.
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<PopularMovie[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchBoxRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = (direction: "left" | "right") => {
+    if (scrollRef.current) {
+      const { scrollLeft, clientWidth } = scrollRef.current;
+      const scrollTo =
+        direction === "left"
+          ? scrollLeft - clientWidth * 0.75
+          : scrollLeft + clientWidth * 0.75;
+      scrollRef.current.scrollTo({ left: scrollTo, behavior: "smooth" });
+    }
+  };
 
   // Explore mode (triggered by Enter / search icon): two-section results.
   const [explore, setExplore] = useState<{
@@ -192,47 +208,138 @@ export function ForYouTab() {
     setDetailOpen(true);
   }
 
+  // Get all unique genres from recommendations
+  const allUniqueGenres = recommendations
+    ? Array.from(
+        new Set(
+          recommendations
+            .flatMap((m) => (m.genres || "").split("|"))
+            .map((g) => g.trim())
+            .filter((g) => g && g !== "(no genres listed)")
+        )
+      ).sort()
+    : [];
+
+  // Filter and sort recommendations
+  const filteredAndSortedRecs = recommendations
+    ? recommendations
+        .filter((m) => {
+          if (genreFilter === "All") return true;
+          return (m.genres || "")
+            .split("|")
+            .map((g) => g.trim().toLowerCase())
+            .includes(genreFilter.toLowerCase());
+        })
+        .sort((a, b) => {
+          if (sortBy === "score") {
+            return b.score - a.score;
+          }
+          if (sortBy === "title") {
+            return a.title.localeCompare(b.title);
+          }
+          return 0; // relevance (keep default SVD ranking)
+        })
+    : [];
+
   // ---- Results screen ----
   if (recommendations) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold">Your personalized picks</h2>
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="text-xl font-semibold tracking-wide font-display">
+              Your Recommendations
+            </h2>
             <p className="text-sm text-muted-foreground">
               Computed from {ratedCount} ratings via SVD matrix factorization.
             </p>
           </div>
-          <Button variant="outline" onClick={reset}>
+          <Button
+            variant="outline"
+            onClick={reset}
+            className="shrink-0 uppercase tracking-wider"
+          >
             <RotateCcw className="h-4 w-4" /> Start over
           </Button>
         </div>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {recommendations.map((m) => (
-            <Card
-              key={m.movie_id}
-              onClick={() => {
-                setDetailId(m.movie_id);
-                setDetailOpen(true);
-              }}
-              className="cursor-pointer overflow-hidden transition-transform hover:scale-[1.03]"
+
+        {/* Filter and Sort bar */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/40 pb-4">
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              onClick={() => setGenreFilter("All")}
+              className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-all ${
+                genreFilter === "All"
+                  ? "bg-gold text-black shadow"
+                  : "bg-secondary text-zinc-400 hover:text-white"
+              }`}
             >
-              <div className="aspect-[2/3]">
+              All
+            </button>
+            {allUniqueGenres.map((genre) => (
+              <button
+                key={genre}
+                onClick={() => setGenreFilter(genre)}
+                className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-all ${
+                  genreFilter === genre
+                    ? "bg-gold text-black shadow"
+                    : "bg-secondary text-zinc-400 hover:text-white"
+                }`}
+              >
+                {genre}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <span className="text-[11px] text-muted-foreground">Sort:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="rounded-md border border-border bg-[#111] px-2 py-1 text-xs font-medium text-white focus:border-gold focus:ring-1 focus:ring-gold"
+            >
+              <option value="relevance">Match Relevance</option>
+              <option value="score">Rating Score</option>
+              <option value="title">Alphabetical</option>
+            </select>
+          </div>
+        </div>
+
+        {filteredAndSortedRecs.length === 0 ? (
+          <p className="text-center text-sm text-muted-foreground py-10">
+            No recommendations match the selected genre.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {filteredAndSortedRecs.map((m, i) => (
+              <div
+                key={m.movie_id}
+                onClick={() => {
+                  setDetailId(m.movie_id);
+                  setDetailOpen(true);
+                }}
+                style={{ animationDelay: `${i * 50}ms` }}
+                className="group relative aspect-[2/3] animate-fade-in-up cursor-pointer overflow-hidden rounded-lg border border-border/60 bg-card transition-all duration-300 hover:scale-105 hover:border-gold/50 hover:shadow-[0_0_25px_-4px_rgba(245,158,11,0.45)]"
+              >
+                <WatchlistButton title={m.title} posterUrl={m.poster_url} movieId={m.movie_id} />
                 <MoviePoster
                   src={m.poster_url}
                   alt={m.title}
                   className="h-full w-full object-cover"
                 />
+                {/* Hover overlay with title + genre. */}
+                <div className="absolute inset-0 flex flex-col justify-end gap-1.5 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                  <p className="line-clamp-3 text-sm font-medium text-white">
+                    {m.title}
+                  </p>
+                  <span className="w-fit rounded border border-gold/50 px-1.5 py-0.5 text-[10px] text-gold">
+                    {topGenre(m.genres)}
+                  </span>
+                </div>
               </div>
-              <CardContent className="space-y-2 p-3">
-                <p className="line-clamp-2 text-sm font-medium">{m.title}</p>
-                <Badge variant="secondary" className="text-[10px]">
-                  {topGenre(m.genres)}
-                </Badge>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
         <MovieDetailDialog
           movieId={detailId}
           open={detailOpen}
@@ -246,8 +353,15 @@ export function ForYouTab() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-xl font-semibold">Rate a few movies to get started</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="text-2xl font-bold tracking-tight">
+          Tell us what you&apos;ve seen
+        </h2>
+        <div className="mx-auto mt-2 flex max-w-[120px] items-center gap-1.5">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent to-gold/50" />
+          <span className="text-gold">★</span>
+          <div className="h-px flex-1 bg-gradient-to-l from-transparent to-gold/50" />
+        </div>
+        <p className="mt-3 text-sm text-muted-foreground">
           Rate at least {MIN_RATINGS} movies and we&apos;ll build your taste
           profile. Search to add any title, or rate the popular ones below.
         </p>
@@ -263,7 +377,7 @@ export function ForYouTab() {
             }}
             className="relative"
           >
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gold" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -282,7 +396,7 @@ export function ForYouTab() {
             </Button>
           </form>
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border bg-card shadow-lg">
+            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-border bg-[#111] shadow-lg">
               {suggestions.map((m) => (
                 <button
                   key={m.movie_id}
@@ -291,7 +405,7 @@ export function ForYouTab() {
                     e.preventDefault();
                     addMovie(m);
                   }}
-                  className="block w-full px-4 py-2 text-left text-sm hover:bg-accent"
+                  className="block w-full border-l-2 border-transparent px-4 py-2.5 text-left text-sm transition-colors hover:border-gold hover:bg-accent"
                 >
                   {m.title}
                 </button>
@@ -301,14 +415,35 @@ export function ForYouTab() {
         </div>
       </div>
 
-      <div className="sticky top-2 z-10 mx-auto flex max-w-md items-center justify-center gap-3 rounded-full border bg-card/90 px-4 py-2 backdrop-blur">
-        <span className="text-sm text-muted-foreground">
-          {ratedCount}/{MIN_RATINGS} rated
-        </span>
-        <Button onClick={submit} disabled={!canSubmit || submitting} size="sm">
-          <Sparkles className="h-4 w-4" />
-          {submitting ? "Crunching..." : "Get my recommendations"}
-        </Button>
+      {/* progress panel & taste profile side by side if there are ratings! */}
+      <div className="grid gap-6 md:grid-cols-3 items-start max-w-4xl mx-auto w-full">
+        <div className="md:col-span-2 flex flex-col gap-3 rounded-lg border border-border/60 bg-card/90 p-5 backdrop-blur">
+          <Button
+            onClick={submit}
+            disabled={!canSubmit || submitting}
+            className="w-full rounded-md uppercase tracking-wider"
+          >
+            <Sparkles className="h-4 w-4" />
+            {submitting ? "Crunching..." : "Get My Recommendations"}
+          </Button>
+          {/* Progress indicator below the button. */}
+          <div className="flex w-full items-center gap-2">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full rounded-full bg-gold transition-all duration-300"
+                style={{
+                  width: `${Math.min(100, (ratedCount / MIN_RATINGS) * 100)}%`,
+                }}
+              />
+            </div>
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {ratedCount} / {MIN_RATINGS} rated
+            </span>
+          </div>
+        </div>
+        <div className="md:col-span-1">
+          <TasteProfile ratings={ratings} movies={ratingGrid} />
+        </div>
       </div>
 
       {error && (
@@ -377,16 +512,84 @@ export function ForYouTab() {
       ) : loadingSeed ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {Array.from({ length: 20 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-[2/3] w-full rounded-xl" />
+            <Skeleton key={i} className="aspect-[2/3] w-full rounded-lg" />
           ))}
         </div>
       ) : (
-        <RateGrid
-          movies={ratingGrid}
-          ratings={ratings}
-          onRate={setRating}
-          onOpenDetail={openDetail}
-        />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 font-display">Popular Seeds</h3>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Swipe or use arrows to scroll</span>
+          </div>
+          
+          <div className="relative group">
+            {/* Film sprocket top border */}
+            <div className="film-sprocket-border opacity-40 mb-3" />
+            
+            {/* Scroll Container */}
+            <div 
+              ref={scrollRef}
+              className="flex gap-4 overflow-x-auto pb-4 pt-1 px-4 scrollbar-none scroll-smooth"
+              style={{ scrollbarWidth: 'none' }}
+            >
+              {ratingGrid.map((m) => {
+                const rated = (ratings[m.movie_id] ?? 0) > 0;
+                return (
+                  <div
+                    key={m.movie_id}
+                    className={`relative w-40 shrink-0 rounded-lg border bg-card/60 transition-all duration-300 hover:scale-105 ${
+                      rated
+                        ? "border-gold/70 shadow-[0_0_15px_-5px_rgba(245,158,11,0.5)]"
+                        : "border-border/60 hover:border-gold/20"
+                    }`}
+                  >
+                    <WatchlistButton title={m.title} posterUrl={m.poster_url} movieId={m.movie_id} />
+                    <div
+                      className="aspect-[2/3] cursor-pointer overflow-hidden rounded-t-lg"
+                      onClick={() => openDetail(m.movie_id)}
+                    >
+                      <MoviePoster
+                        src={m.poster_url}
+                        alt={m.title}
+                        className="h-full w-full object-cover transition-opacity hover:opacity-80"
+                      />
+                    </div>
+                    <div className="space-y-2 p-3">
+                      <p className="line-clamp-2 text-[11px] font-medium min-h-[32px] text-zinc-200 leading-tight">{m.title}</p>
+                      <div className="scale-[0.8] origin-left">
+                        <StarRating
+                          value={ratings[m.movie_id] ?? 0}
+                          onChange={(v) => setRating(m.movie_id, v)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Film sprocket bottom border */}
+            <div className="film-sprocket-border opacity-40 mt-1" />
+            
+            {/* Left Button */}
+            <button
+              onClick={() => handleScroll("left")}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/80 text-white border border-border/80 opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 shadow-lg hover:border-gold/50"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className="h-5 w-5 text-gold" />
+            </button>
+            
+            {/* Right Button */}
+            <button
+              onClick={() => handleScroll("right")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/80 text-white border border-border/80 opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 shadow-lg hover:border-gold/50"
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="h-5 w-5 text-gold" />
+            </button>
+          </div>
+        </div>
       )}
 
       <MovieDetailDialog
@@ -418,27 +621,38 @@ function RateGrid({
 }) {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-      {movies.map((m) => (
-        <Card key={m.movie_id} className="overflow-hidden">
-          <div
-            className="aspect-[2/3] cursor-pointer"
-            onClick={() => onOpenDetail(m.movie_id)}
+      {movies.map((m) => {
+        const rated = (ratings[m.movie_id] ?? 0) > 0;
+        return (
+          <Card
+            key={m.movie_id}
+            className={`overflow-hidden transition-all relative ${
+              rated
+                ? "border-gold/70 shadow-[0_0_15px_-5px_rgba(245,158,11,0.5)]"
+                : "border-border/60"
+            }`}
           >
-            <MoviePoster
-              src={m.poster_url}
-              alt={m.title}
-              className="h-full w-full object-cover transition-opacity hover:opacity-80"
-            />
-          </div>
-          <CardContent className="space-y-2 p-3">
-            <p className="line-clamp-2 text-xs font-medium">{m.title}</p>
-            <StarRating
-              value={ratings[m.movie_id] ?? 0}
-              onChange={(v) => onRate(m.movie_id, v)}
-            />
-          </CardContent>
-        </Card>
-      ))}
+            <WatchlistButton title={m.title} posterUrl={m.poster_url} movieId={m.movie_id} />
+            <div
+              className="aspect-[2/3] cursor-pointer"
+              onClick={() => onOpenDetail(m.movie_id)}
+            >
+              <MoviePoster
+                src={m.poster_url}
+                alt={m.title}
+                className="h-full w-full object-cover transition-opacity hover:opacity-80"
+              />
+            </div>
+            <CardContent className="space-y-2 p-3">
+              <p className="line-clamp-2 text-xs font-medium">{m.title}</p>
+              <StarRating
+                value={ratings[m.movie_id] ?? 0}
+                onChange={(v) => onRate(m.movie_id, v)}
+              />
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
@@ -448,7 +662,7 @@ function PosterRateSkeleton() {
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       {Array.from({ length: 10 }).map((_, i) => (
         <div key={i} className="space-y-2">
-          <Skeleton className="aspect-[2/3] w-full rounded-xl" />
+          <Skeleton className="aspect-[2/3] w-full rounded-lg" />
           <Skeleton className="h-3 w-3/4" />
           <Skeleton className="h-3 w-1/2" />
         </div>

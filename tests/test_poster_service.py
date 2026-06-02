@@ -57,7 +57,7 @@ def test_missing_api_key_returns_placeholder(monkeypatch):
     monkeypatch.delenv("TMDB_API_KEY", raising=False)
     with patch.object(ps.requests, "get") as mock_get:
         url = ps.get_poster_url("Inception")
-    assert url == ps.PLACEHOLDER_POSTER_URL
+    assert url == ps.placeholder_for("Inception")
     mock_get.assert_not_called()
 
 
@@ -67,7 +67,7 @@ def test_no_results_returns_placeholder(monkeypatch):
     resp = _mock_response({"results": []})
     with patch.object(ps.requests, "get", return_value=resp):
         url = ps.get_poster_url("zzzz-not-a-movie")
-    assert url == ps.PLACEHOLDER_POSTER_URL
+    assert url == ps.placeholder_for("zzzz-not-a-movie")
 
 
 def test_request_exception_returns_placeholder(monkeypatch):
@@ -77,7 +77,7 @@ def test_request_exception_returns_placeholder(monkeypatch):
         ps.requests, "get", side_effect=ps.requests.RequestException("boom")
     ):
         url = ps.get_poster_url("Inception")
-    assert url == ps.PLACEHOLDER_POSTER_URL
+    assert url == ps.placeholder_for("Inception")
 
 
 def test_year_suffix_stripped_from_query(monkeypatch):
