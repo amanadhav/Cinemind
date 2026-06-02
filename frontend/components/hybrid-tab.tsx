@@ -114,17 +114,18 @@ export function HybridTab() {
             1. Pick a movie you love
           </h3>
           <div ref={boxRef} className="relative">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gold" />
-              <Input
+            <div className="flex w-full items-center bg-[#111] border border-white/10 rounded-xl p-1 shadow-inner focus-within:ring-1 focus-within:ring-white/30 transition-all group">
+              <Search className="ml-3 h-4 w-4 text-white/40 group-focus-within:text-white transition-colors" />
+              <input
+                type="text"
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
                   setSelectedMovie(null);
                 }}
                 onFocus={() => suggestions.length && setShowSuggestions(true)}
-                placeholder="e.g. The Matrix"
-                className="h-11 pl-9"
+                placeholder="e.g. The Matrix..."
+                className="flex-1 h-10 bg-transparent px-3 text-sm text-white placeholder:text-white/40 focus:outline-none"
               />
             </div>
             {showSuggestions && suggestions.length > 0 && (

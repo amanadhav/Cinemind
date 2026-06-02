@@ -94,36 +94,33 @@ export function DiscoverTab({ initialQuery, onClearInitialQuery }: DiscoverTabPr
     }
   }
 
+  const handleSearch = () => runSearch(query);
+
   return (
     <div className="space-y-8">
       <div className="mx-auto max-w-xl">
         <div ref={boxRef} className="relative">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              runSearch(query);
-            }}
-            className="flex gap-2"
-          >
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gold" />
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onFocus={() => suggestions.length && setShowSuggestions(true)}
-                placeholder="Search a movie you like, e.g. Inception"
-                className="h-12 pl-9"
-              />
-            </div>
-            <Button
-              type="submit"
-              size="lg"
-              disabled={loading}
-              className="h-12 uppercase tracking-wider"
+          <div className="relative mx-auto w-full flex items-center bg-[#111] border border-white/10 rounded-xl p-1 shadow-inner focus-within:ring-1 focus-within:ring-white/30 transition-all group">
+            <Search className="absolute left-4 h-5 w-5 text-white/40 group-focus-within:text-white transition-colors" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => suggestions.length && setShowSuggestions(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSearch();
+              }}
+              placeholder="Search a movie you like..."
+              className="flex-1 h-12 bg-transparent pl-12 pr-4 text-sm text-white placeholder:text-white/40 focus:outline-none"
+            />
+            <button 
+              onClick={handleSearch}
+              disabled={query.trim().length < 2 || loading}
+              className="flex h-10 w-16 items-center justify-center rounded-lg bg-[#8C8C8C] hover:bg-[#A0A0A0] transition-colors ml-2 disabled:opacity-50"
             >
-              {loading ? "Finding..." : "Recommend"}
-            </Button>
-          </form>
+              {loading ? <Loader2 className="h-5 w-5 animate-spin text-[#1a1a1a]" /> : <Search className="h-5 w-5 text-[#1a1a1a]" />}
+            </button>
+          </div>
 
           {showSuggestions && suggestions.length > 0 && (
             <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-border bg-[#111] shadow-lg">

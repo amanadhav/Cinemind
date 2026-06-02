@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clapperboard, Bookmark, Sparkles, Loader2 } from "lucide-react";
+import { Clapperboard, Bookmark, Sparkles, Loader2, Search, Bell, User } from "lucide-react";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DiscoverTab } from "@/components/discover-tab";
 import { ForYouTab } from "@/components/for-you-tab";
 import { HybridTab } from "@/components/hybrid-tab";
@@ -111,8 +110,59 @@ export default function Home() {
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden pb-16">
-      <div className="absolute left-[15%] top-[10%] h-[400px] w-[400px] bg-gold/5 bg-glow-sphere animate-pulse-slow" />
+    <main className="relative min-h-screen overflow-hidden pb-16 bg-background">
+      {/* Global Navigation Bar */}
+      <nav className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-6 md:px-12 bg-gradient-to-b from-black/90 via-black/40 to-transparent">
+        <div className="flex items-center gap-12">
+          {/* Logo */}
+          <div className="flex items-center gap-0.5 cursor-pointer" onClick={() => setActiveTab("for-you")}>
+            <span className="text-3xl font-black italic tracking-tighter text-white">M</span>
+            <span className="text-2xl font-bold italic tracking-tighter text-white">oov</span>
+          </div>
+          
+          {/* Tab Links */}
+          <div className="hidden md:flex items-center gap-8 text-sm font-semibold tracking-wide">
+            <button 
+              onClick={() => setActiveTab("for-you")} 
+              className={`transition-colors ${activeTab === "for-you" ? "text-white" : "text-white/60 hover:text-white"}`}
+            >
+              Home
+            </button>
+            <button 
+              onClick={() => setActiveTab("discover")} 
+              className={`transition-colors ${activeTab === "discover" ? "text-white" : "text-white/60 hover:text-white"}`}
+            >
+              Movies
+            </button>
+            <button 
+              onClick={() => setActiveTab("mix-it")} 
+              className={`transition-colors ${activeTab === "mix-it" ? "text-white" : "text-white/60 hover:text-white"}`}
+            >
+              Series
+            </button>
+          </div>
+        </div>
+
+        {/* Right Icons */}
+        <div className="flex items-center gap-6">
+          <button onClick={() => setActiveTab("discover")} className="text-white hover:text-white/80 transition-colors">
+            <Search className="h-5 w-5" />
+          </button>
+          <button onClick={() => setWatchlistOpen(true)} className="relative text-white hover:text-white/80 transition-colors">
+            <Bell className="h-5 w-5" />
+            {watchlistCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-white text-[8px] font-bold text-black border border-black">
+                {watchlistCount}
+              </span>
+            )}
+          </button>
+          <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-white to-gray-500 cursor-pointer overflow-hidden border border-white/20">
+            <User className="h-full w-full p-1 text-black/40 mt-1" />
+          </div>
+        </div>
+      </nav>
+
+      <div className="absolute left-[15%] top-[10%] h-[400px] w-[400px] bg-white/5 bg-glow-sphere animate-pulse-slow" />
       <div className="absolute right-[5%] top-[25%] h-[500px] w-[500px] bg-white/5 bg-glow-sphere animate-pulse-slow-reverse" />
 
       <header className="relative w-full h-[70vh] min-h-[600px] max-h-[800px] bg-zinc-950 overflow-hidden">
@@ -233,34 +283,27 @@ export default function Home() {
         )}
       </header>
 
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="mb-10 flex justify-center">
-            <TabsList className="glass-panel border-border/80 p-1 shadow-xl">
-              <TabsTrigger value="for-you" className="font-semibold uppercase tracking-wider text-xs">For You</TabsTrigger>
-              <TabsTrigger value="discover" className="font-semibold uppercase tracking-wider text-xs">Discover by Movie</TabsTrigger>
-              <TabsTrigger value="mix-it" className="font-semibold uppercase tracking-wider text-xs">Mix It</TabsTrigger>
-            </TabsList>
-          </div>
+      {/* Main Content Area overlapping the Spotlight banner */}
+      <div className="mx-auto max-w-[1400px] px-6 pb-10 relative z-30 -mt-24">
+        {activeTab === "for-you" && (
+          <ErrorBoundary label="Home">
+            <ForYouTab />
+          </ErrorBoundary>
+        )}
+        
+        {activeTab === "discover" && (
+          <ErrorBoundary label="Movies">
+            <DiscoverTab initialQuery={discoverSeed} onClearInitialQuery={() => setDiscoverSeed("")} />
+          </ErrorBoundary>
+        )}
+        
+        {activeTab === "mix-it" && (
+          <ErrorBoundary label="Series">
+            <HybridTab />
+          </ErrorBoundary>
+        )}
 
-          <TabsContent value="for-you" className="focus-visible:ring-0 focus-visible:ring-offset-0">
-            <ErrorBoundary label="For You">
-              <ForYouTab />
-            </ErrorBoundary>
-          </TabsContent>
-          <TabsContent value="discover" className="focus-visible:ring-0 focus-visible:ring-offset-0">
-            <ErrorBoundary label="Discover by Movie">
-              <DiscoverTab initialQuery={discoverSeed} onClearInitialQuery={() => setDiscoverSeed("")} />
-            </ErrorBoundary>
-          </TabsContent>
-          <TabsContent value="mix-it" className="focus-visible:ring-0 focus-visible:ring-offset-0">
-            <ErrorBoundary label="Mix It">
-              <HybridTab />
-            </ErrorBoundary>
-          </TabsContent>
-        </Tabs>
-
-        <section className="mt-16">
+        <section className="mt-20">
           <HowItWorks />
         </section>
 
@@ -268,19 +311,6 @@ export default function Home() {
           Built with Next.js, shadcn/ui, and a Flask + scikit-learn / SciPy backend.
         </footer>
       </div>
-
-      <button
-        onClick={() => setWatchlistOpen(true)}
-        className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full border border-gold/30 bg-black/80 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_20px_rgba(245,158,11,0.25)] backdrop-blur-md transition-all hover:scale-105 hover:border-gold/50 hover:bg-black"
-      >
-        <Bookmark className="h-4 w-4 fill-gold text-gold" />
-        Watchlist
-        {watchlistCount > 0 && (
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-black">
-            {watchlistCount}
-          </span>
-        )}
-      </button>
 
       <WatchlistDrawer open={watchlistOpen} onClose={() => setWatchlistOpen(false)} />
     </main>
