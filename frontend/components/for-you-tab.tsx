@@ -427,9 +427,9 @@ export function ForYouTab() {
                 <button
                   key={m.movie_id}
                   type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    addMovie(m);
+                  onClick={() => {
+                    setQuery(m.title);
+                    runExplore(m.title);
                   }}
                   className={`block w-full px-5 py-3 text-left text-sm font-medium transition-all hover:bg-white/10 hover:text-white text-zinc-300 ${
                     idx !== suggestions.length - 1 ? "border-b border-white/5" : ""
