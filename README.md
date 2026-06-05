@@ -2,14 +2,24 @@
 
 **[Live Demo](https://cinemind-prod.vercel.app)**
 
-CineMind is a full-stack movie recommendation system. It combines **content-based
-filtering** (TF-IDF over genres, keywords, cast and crew with cosine-similarity
-nearest neighbors) and **collaborative filtering** (SVD matrix factorization over
-100,836 MovieLens ratings from 610 users). New visitors get personalized picks
-through a **cold-start fold-in** — their ad-hoc ratings are projected into the
-trained latent space at request time, with no model retraining. A **Next.js +
-shadcn/ui** frontend talks to a **Flask** JSON API, and movie posters and
-metadata are enriched live from the **TMDB API**.
+I was taking CSE 475 (Machine Learning) this semester and we covered collaborative filtering and matrix factorization. Around the same time I was frustrated that I had no good way to keep track of movies I wanted to watch or find stuff similar to what I already liked — things like Goodfellas, Taxi Driver, that kind of cinema. So I built CineMind to actually use what I was learning on a problem I had.
+
+The core idea: rate a few movies you've seen, get back recommendations that match your taste. Under the hood it's a hybrid of two approaches — SVD matrix factorization on 100k+ MovieLens ratings for the collaborative side, and TF-IDF + cosine similarity over genres, cast, crew and keywords for the content side. New users get handled via a cold-start fold-in so they don't need to exist in the training data.
+
+---
+
+## How it works
+
+### Content-based filtering
+Each movie gets a `combined_features` text field built from its genres, keywords, cast and crew. A `TfidfVectorizer` turns those into vectors and a cosine-distance `NearestNeighbors` model finds the closest titles. Search supports fuzzy matching so `incept` finds `Inception`.
+
+### Collaborative filtering (SVD)
+Loads the MovieLens user-item matrix (610 users × 9,724 movies), mean-centers each user's ratings, then factorizes with `scipy.sparse.linalg.svds` at k=50 latent factors. For known users, recommendations come from reconstructing `U · Σ · Vᵀ` and masking already-rated movies.
+
+For new users (cold start), the ratings you submit get folded into the latent space — `user_latent = r · Vᵀ / Σ` — so you get personalized picks without retraining anything. The whole factorization runs in about a second at startup and stays in memory.
+
+### Hybrid
+Both models produce candidate lists that get interleaved and de-duplicated. Movies that show up in both are promoted to the top and tagged `both`.
 
 ---
 
@@ -37,8 +47,7 @@ metadata are enriched live from the **TMDB API**.
                   └─────────────┘  └────────────┘  └─────────────┘
 ```
 
-Both ML models are loaded once into module-level singletons at startup
-(`run.py` warms them up), so requests never pay the training cost.
+Both models are loaded once into module-level singletons at startup so requests don't pay any initialization cost.
 
 ---
 
@@ -49,95 +58,40 @@ Both ML models are loaded once into module-level singletons at startup
 | Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS, shadcn/ui, Radix UI |
 | Backend | Python, Flask, flask-cors, Gunicorn |
 | ML / data | scikit-learn (TF-IDF + KNN), SciPy (`svds`), pandas, NumPy |
-| Validation | Pydantic v2 (typed request schemas, bounds checking) |
+| Validation | Pydantic v2 |
 | External | TMDB API (posters, overviews, backdrops) |
 | Testing | pytest (71 tests) |
 | Deploy | Railway (API) + Vercel (frontend) |
 
 ---
 
-## The recommendation engine
+## Frontend tabs
 
-### Content-based (`app/services/content_recommender.py`)
-Each movie has a `combined_features` text field (genres, keywords, cast, crew,
-overview). A `TfidfVectorizer` turns these into vectors and a cosine-distance
-`NearestNeighbors` model finds the most similar titles. Exact and fuzzy
-substring matching resolve user queries (e.g. `incept` → `Inception`).
-
-### Collaborative — real-time SVD (`app/services/collab_recommender.py`)
-At startup the service builds a 610 × 9,724 user-item matrix from
-`ratings.csv`, mean-centers each user's ratings, and factorizes it with
-`scipy.sparse.linalg.svds` (50 latent factors) in ~1 second.
-
-- **Known users:** predicted ratings are reconstructed from `U · Σ · Vᵀ`,
-  already-rated movies are masked out, and the top-N remaining are returned.
-- **New users (cold start):** the ratings a visitor submits are folded into the
-  latent space — `user_latent = r · Vᵀ / Σ` — then reconstructed into predicted
-  scores. No retraining is required, so recommendations are instant.
-
-### Hybrid
-Content and collaborative candidate lists are interleaved, de-duplicated by a
-normalized title key, and each result is tagged `content`, `collaborative`, or
-`both` (titles found by both sources are promoted to the top).
-
----
-
-## Production hardening
-
-The API is built for observability and robustness, not just the happy path:
-
-- **Request validation** — every endpoint validates its body/query against a
-  Pydantic v2 schema (`app/schemas.py`). User ids are bounded to 1–610, ratings
-  to the MovieLens 0.5–5.0 half-star scale, query/title lengths are capped, and
-  the cold-start payload is size-limited. Invalid input never reaches the model.
-- **Consistent error envelope** — a single set of handlers (`app/errors.py`)
-  turns validation failures, HTTP errors, and uncaught exceptions into a uniform
-  `{"error", "type"}` JSON response. Internal exceptions are logged with a full
-  traceback but return a generic message, so stack traces never leak to clients.
-- **Structured logging + request tracing** — each request gets an 8-char
-  correlation id (`app/logging_config.py`) that is attached to every log line
-  and returned in an `X-Request-ID` response header, so a single API call can be
-  traced end-to-end. Request method, path, status, and latency are logged on
-  completion.
-- **Resilient frontend** — each tab is wrapped in a React error boundary so one
-  failing section can't blank the app, the fetch client enforces a 15s timeout
-  (with a distinct "server is waking up" message for the free-tier cold start),
-  and failed data loads show an inline retry instead of a dead end.
-
----
-
-## Frontend features
-
-- **For You** — rate 5+ popular movies with a star widget, get personalized
-  picks via the cold-start fold-in.
-- **Discover by Movie** — debounced autocomplete search, then a grid of similar
-  movies with match-rank badges and skeleton loading states.
-- **Mix It** — pick a movie you love *and* rate a few others; results are a
-  blended grid with colored source badges.
-- **Movie detail dialog** — click any poster for a TMDB-powered modal (backdrop,
-  overview, runtime, genres) with a "Find Similar" action.
-- **How it works** — a collapsible explainer of the three approaches.
+- **For You** — rate 5+ movies with a star widget, get cold-start SVD picks
+- **Discover** — search a movie title, get a grid of similar ones with match badges
+- **Mix It** — pick a movie you love and rate a few others, get a blended result grid
+- **Movie detail** — click any poster for a TMDB modal with backdrop, overview, runtime and genres
 
 ---
 
 ## Setup
 
-Requires **Python 3.9+** and **Node.js 18+**.
+Requires Python 3.9+ and Node.js 18+.
 
 ```bash
 # 1. Clone
 git clone https://github.com/amanadhav/Cinemind.git
 cd Cinemind
 
-# 2. Backend: virtual environment + dependencies
+# 2. Backend
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-# 3. Provide a TMDB API key (used for posters + metadata)
-cp .env.example .env             # then edit .env and set TMDB_API_KEY
+# 3. TMDB API key
+cp .env.example .env             # edit .env and set TMDB_API_KEY
 
-# 4. Run the backend (port 5000)
+# 4. Run backend (port 5000)
 python run.py
 ```
 
@@ -146,19 +100,16 @@ In a second terminal:
 ```bash
 # 5. Frontend
 cd frontend
-cp .env.local.example .env.local  # NEXT_PUBLIC_API_URL=http://localhost:5000
+cp .env.local.example .env.local  # set NEXT_PUBLIC_API_URL=http://localhost:5000
 npm install
-npm run dev                       # port 3000
+npm run dev                        # port 3000
 ```
 
 Open http://localhost:3000.
 
-### About the TMDB API key
-`TMDB_API_KEY` (a TMDB **v3** API key) is read from the environment via a
-`.env` file and is never hardcoded. If it is missing, poster and metadata
-lookups fall back to placeholders so the app still runs.
+If `TMDB_API_KEY` is missing, poster lookups fall back to placeholders so the app still runs.
 
-### Running the tests
+### Tests
 ```bash
 pytest
 ```
@@ -170,47 +121,13 @@ pytest
 | Method | Path | Body / Query | Description |
 |--------|------|--------------|-------------|
 | POST | `/api/recommend/content` | `{"movie": "Inception"}` | Content-based similar movies |
-| POST | `/api/recommend/collaborative` | `{"user_id": 42}` | Real-time SVD picks for a known user |
-| POST | `/api/recommend/hybrid` | `{"movie": "...", "user_id": 42}` or `{"movie": "...", "ratings": [...]}` | Blended content + collaborative results |
-| POST | `/api/rate` | `{"ratings": [{"movie_id": 1, "rating": 4.5}]}` | Cold-start picks from ad-hoc ratings |
-| GET | `/api/movies/popular` | `?limit=20` | Most-rated movies (seeds the rating UI) |
-| GET | `/api/movie/<id>` | – | Full TMDB metadata for a MovieLens id |
-| GET | `/api/movie/detail` | `?title=Inception` | Full TMDB metadata by title |
-| GET | `/api/search` | `?q=inc` | Autocomplete over movie titles |
-| GET | `/health` | – | Health check + model-loaded status |
-
-All responses include an `X-Request-ID` header for tracing. Errors use a
-consistent envelope: `{"error": "<message>", "type": "validation_error" | "http_error" | "internal_error"}`.
-
-### Example responses
-
-`POST /api/rate`
-```json
-{
-  "recommendations": [
-    {
-      "movie_id": 3114, "title": "Toy Story 2 (1999)",
-      "genres": "Adventure|Animation|Children|Comedy|Fantasy",
-      "score": 4.72, "poster_url": "https://image.tmdb.org/t/p/w500/..."
-    }
-  ]
-}
-```
-
-`POST /api/recommend/hybrid`
-```json
-[
-  { "title": "Inception", "poster_url": "...", "source": "content" },
-  { "title": "The Matrix (1999)", "poster_url": "...", "source": "both" }
-]
-```
-
----
-
-## Deployment
-
-See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for step-by-step Railway (backend) and
-Vercel (frontend) instructions.
+| POST | `/api/recommend/collaborative` | `{"user_id": 42}` | SVD picks for a known user |
+| POST | `/api/recommend/hybrid` | `{"movie": "...", "ratings": [...]}` | Blended results |
+| POST | `/api/rate` | `{"ratings": [{"movie_id": 1, "rating": 4.5}]}` | Cold-start picks |
+| GET | `/api/movies/popular` | `?limit=20` | Most-rated movies |
+| GET | `/api/movie/<id>` | – | TMDB metadata by MovieLens id |
+| GET | `/api/search` | `?q=inc` | Autocomplete |
+| GET | `/health` | – | Health check |
 
 ---
 
@@ -220,34 +137,26 @@ Vercel (frontend) instructions.
 Cinemind/
 ├── app/
 │   ├── __init__.py              # Flask app factory + CORS + request tracing
-│   ├── logging_config.py        # correlation-id-aware structured logging
-│   ├── schemas.py               # Pydantic request schemas (validation)
-│   ├── errors.py                # app-wide JSON error handlers
+│   ├── logging_config.py        # structured logging with correlation ids
+│   ├── schemas.py               # Pydantic request schemas
+│   ├── errors.py                # JSON error handlers
 │   ├── routes/
 │   │   ├── recommend.py         # content / collaborative / hybrid
 │   │   ├── ratings.py           # /api/rate, /api/movies/popular
 │   │   ├── movies.py            # /api/movie/<id>, /api/movie/detail
 │   │   └── search.py            # /api/search, /health
 │   └── services/
-│       ├── content_recommender.py   # TF-IDF + KNN (cached singleton)
-│       ├── collab_recommender.py    # real-time SVD inference + fold-in
-│       └── poster_service.py        # TMDB posters + metadata + cache
+│       ├── content_recommender.py   # TF-IDF + KNN
+│       ├── collab_recommender.py    # SVD inference + fold-in
+│       └── poster_service.py        # TMDB integration
 ├── frontend/                    # Next.js 14 + shadcn/ui
-│   ├── app/                     # layout, home page, globals.css
-│   ├── components/              # tabs, dialog, cards, error-boundary, ui/
-│   └── lib/                     # typed API client (timeouts) + utils
 ├── data/                        # MovieLens raw + processed CSVs
-├── notebooks/                   # content, KNN, matrix-factorization notebooks
-├── tests/                       # pytest suite (71 tests)
-├── config.py · run.py · Procfile · requirements.txt · DEPLOYMENT.md
+├── notebooks/                   # exploratory notebooks (content, KNN, SVD)
+└── tests/                       # pytest suite (71 tests)
 ```
 
 ---
 
 ## Notebooks
 
-The `notebooks/` directory holds the exploratory and training work:
-`01_content_based_tmdb.ipynb` builds the processed content dataset;
-`02_knn_collaborative.ipynb` and `03_matrix_factorization.ipynb` explore the
-collaborative approaches. The production app trains its SVD model directly from
-the raw ratings at startup.
+`notebooks/` has the exploratory work: `01_content_based_tmdb.ipynb` builds the processed content dataset, `02_knn_collaborative.ipynb` and `03_matrix_factorization.ipynb` are where I worked through the collaborative approaches before moving them into the app.
