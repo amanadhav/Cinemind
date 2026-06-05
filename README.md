@@ -2,6 +2,8 @@
 
 **[Live Demo](https://cinemind-prod.vercel.app)**
 
+![CineMind demo](assets/Animation.gif)
+
 I was taking CSE 475 (Machine Learning) this semester and we covered collaborative filtering and matrix factorization. Around the same time I was frustrated that I had no good way to keep track of movies I wanted to watch or find stuff similar to what I already liked - things like Goodfellas, Taxi Driver, that kind of cinema. So I built CineMind to actually use what I was learning on a problem I had.
 
 The core idea: rate a few movies you've seen, get back recommendations that match your taste. Under the hood it's a hybrid of two approaches - SVD matrix factorization on 100k+ MovieLens ratings for the collaborative side, and TF-IDF + cosine similarity over genres, cast, crew and keywords for the content side. New users get handled via a cold-start fold-in so they don't need to exist in the training data.
